@@ -10,63 +10,58 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'json';
 
-    const dataset = await prisma.dataset.findUnique({
-      where: { id },
-      include: {
-        dataPoints: true,
-      },
-    });
-
+    const dataset = await prisma.dataset.findUnique({ where: { id } });
     if (!dataset) {
       return NextResponse.json({ error: 'Dataset not found' }, { status: 404 });
     }
 
-    const data = dataset.dataPoints.map((dp) => {
-      try {
-        return JSON.parse(dp.data);
-      } catch {
-        return {};
-      }
+    const dataPoints = await prisma.dataPoint.findMany({
+      where: { datasetId: id },
+      include: { source: true },
+    });
+
+    const parsedData = dataPoints.map(dp => {
+      const data = dp.data ? JSON.parse(dp.data) : {};
+      return {
+        ...data,
+        _confidence: dp.confidence,
+        _valid: dp.isValid,
+        _source: dp.source?.domain || 'unknown',
+      };
     });
 
     if (format === 'csv') {
-      if (data.length === 0) {
-        return new NextResponse('', {
-          headers: {
-            'Content-Type': 'text/csv',
-            'Content-Disposition': `attachment; filename="dataset-${id}.csv"`,
-          },
-        });
+      if (parsedData.length === 0) {
+        return new NextResponse('No data', { status: 200, headers: { 'Content-Type': 'text/csv' } });
       }
 
-      const headerKeys = Object.keys(data[0] as object);
+      const headers = Object.keys(parsedData[0]);
       const csvRows = [
-        headerKeys.join(','),
-        ...data.map((row: Record<string, unknown>) =>
-          headerKeys
-            .map((header) => {
-              const value = row[header] === null || row[header] === undefined ? '' : String(row[header]);
-              return `"${value.replace(/"/g, '""')}"`;
-            })
-            .join(',')
+        headers.join(','),
+        ...parsedData.map(row =>
+          headers.map(h => {
+            const val = String((row as Record<string, unknown>)[h] ?? '');
+            return val.includes(',') || val.includes('"') || val.includes('\n')
+              ? `"${val.replace(/"/g, '""')}"`
+              : val;
+          }).join(',')
         ),
       ];
 
-      const csvContent = csvRows.join('\n');
-
-      return new NextResponse(csvContent, {
+      return new NextResponse(csvRows.join('\n'), {
+        status: 200,
         headers: {
           'Content-Type': 'text/csv',
-          'Content-Disposition': `attachment; filename="dataset-${id}.csv"`,
+          'Content-Disposition': `attachment; filename="${dataset.name.replace(/[^a-zA-Z0-9]/g, '_')}.csv"`,
         },
       });
     }
 
-    // Default to JSON
-    return new NextResponse(JSON.stringify(data, null, 2), {
+    return new NextResponse(JSON.stringify(parsedData, null, 2), {
+      status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Content-Disposition': `attachment; filename="dataset-${id}.json"`,
+        'Content-Disposition': `attachment; filename="${dataset.name.replace(/[^a-zA-Z0-9]/g, '_')}.json"`,
       },
     });
   } catch (error) {
