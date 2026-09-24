@@ -46,6 +46,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      allowDangerousEmailAccountLinking: true,
     })
   );
 }
@@ -53,17 +54,34 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
+  // Required for Vercel deployment — trusts the proxy headers
+  trustHost: true,
+  // Explicitly set secret (NextAuth v5 reads AUTH_SECRET by default, not NEXTAUTH_SECRET)
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: '/login',
     error: '/login',
   },
   providers,
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account }) {
+      // Allow all OAuth sign-ins and credential sign-ins
+      if (account?.provider === 'google') {
+        // Ensure user has a name for Google OAuth
+        if (!user.name) {
+          user.name = user.email?.split('@')[0] || 'User';
+        }
+      }
+      return true;
+    },
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
-        token.hasCompletedOnboarding = (user as any).hasCompletedOnboarding;
+        token.role = (user as any).role || 'user';
+        token.hasCompletedOnboarding = (user as any).hasCompletedOnboarding || false;
+      }
+      if (account) {
+        token.provider = account.provider;
       }
       return token;
     },
