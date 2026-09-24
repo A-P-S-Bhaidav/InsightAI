@@ -1,160 +1,107 @@
 'use client';
-
 import { useState, useEffect } from 'react';
-import { GitBranch, Clock, ChevronDown, ChevronUp } from 'lucide-react';
-import Skeleton from '@/components/common/Skeleton';
-import Badge from '@/components/common/Badge';
-import EmptyState from '@/components/common/EmptyState';
-
-interface WorkflowStep {
-  id: string;
-  name: string;
-  status: string;
-  startedAt?: string;
-  completedAt?: string;
-  error?: string;
-}
-
-interface Workflow {
-  id: string;
-  name: string;
-  description: string;
-  status: string;
-  progress: number;
-  createdAt: string;
-  taskId: string;
-  taskName: string;
-  steps: WorkflowStep[];
-}
 
 export default function WorkflowsPage() {
-  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  const [workflows, setWorkflows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchWorkflows() {
-      try {
-        const res = await fetch('/api/workflows');
-        if (res.ok) {
-          const data = await res.json();
-          setWorkflows(data.data || []);
-        }
-      } catch (error) {
-        console.error('Failed to fetch workflows:', error);
-      } finally {
+    fetch('/api/workflows')
+      .then(res => res.json())
+      .then(data => {
+        setWorkflows(Array.isArray(data) ? data : []);
         setLoading(false);
-      }
-    }
-    fetchWorkflows();
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
   }, []);
 
-  const toggleExpand = (id: string) => {
-    setExpandedId(prev => prev === id ? null : id);
-  };
-
   return (
-    <div className="animate-fade-in p-6 max-w-5xl mx-auto space-y-6">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Workflows</h1>
-        <p className="text-[var(--color-text-muted)]">Track your data collection workflow history</p>
-      </header>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div>
+        <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#fff' }}>Workflows</h1>
+        <p style={{ color: '#888', margin: 0 }}>Monitor your data pipelines</p>
+      </div>
 
       {loading ? (
-        <div className="space-y-4">
-          <Skeleton height="6rem" width="100%" />
-          <Skeleton height="6rem" width="100%" />
-          <Skeleton height="6rem" width="100%" />
-        </div>
+        <div style={{ color: '#888' }}>Loading workflows...</div>
       ) : workflows.length === 0 ? (
-        <EmptyState 
-          title="No workflows found" 
-          description="Workflows will appear here once tasks start executing."
-          icon={<GitBranch className="w-10 h-10 text-[var(--color-text-muted)]" />}
-        />
+        <div style={{ 
+          background: 'rgba(255,255,255,0.03)', 
+          border: '1px dashed rgba(255,255,255,0.1)', 
+          borderRadius: '12px', 
+          padding: '40px', 
+          textAlign: 'center' 
+        }}>
+          <p style={{ color: '#888', margin: 0 }}>No workflows found.</p>
+        </div>
       ) : (
-        <div className="space-y-4">
-          {workflows.map(workflow => (
-            <div key={workflow.id} className="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden shadow-sm">
-              <div 
-                className="p-5 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-[var(--color-background)] transition-colors"
-                onClick={() => toggleExpand(workflow.id)}
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-semibold text-lg">{workflow.name}</h3>
-                    <Badge 
-                      variant={workflow.status === 'completed' ? 'success' : workflow.status === 'failed' ? 'error' : workflow.status === 'running' ? 'primary' : 'default'}
-                      label={workflow.status}
-                    />
-                  </div>
-                  <p className="text-sm text-[var(--color-text-muted)] mb-3">{workflow.description}</p>
-                  
-                  <div className="flex items-center gap-6 text-xs text-[var(--color-text-muted)]">
-                    <span className="flex items-center gap-1">
-                      <GitBranch className="w-3 h-3" /> {workflow.taskName}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {new Date(workflow.createdAt).toLocaleString()}
-                    </span>
-                    <span>{workflow.steps?.length || 0} steps</span>
-                  </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {workflows.map(wf => (
+            <div
+              key={wf.id}
+              onClick={() => setExpandedId(expandedId === wf.id ? null : wf.id)}
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '12px',
+                padding: '20px',
+                cursor: 'pointer',
+                transition: 'border-color 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff' }}>{wf.name || 'Unnamed Pipeline'}</span>
+                  <span style={{ fontSize: '14px', color: '#888' }}>
+                    {wf.completedSteps || 0} of {wf.totalSteps || 3} steps completed
+                  </span>
                 </div>
-
-                <div className="flex items-center gap-6">
-                  <div className="w-32 hidden sm:block">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span>Progress</span>
-                      <span>{workflow.progress}%</span>
-                    </div>
-                    <div className="h-2 w-full bg-[var(--color-border)] rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full ${workflow.status === 'failed' ? 'bg-[var(--color-error)]' : 'bg-[var(--color-primary)]'}`} 
-                        style={{ width: `${workflow.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <button className="text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
-                    {expandedId === workflow.id ? <ChevronUp /> : <ChevronDown />}
-                  </button>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                  <span style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    background: wf.status === 'completed' ? 'rgba(34,197,94,0.1)' : 
+                                wf.status === 'running' ? 'rgba(59,130,246,0.1)' : 
+                                wf.status === 'failed' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.1)',
+                    color: wf.status === 'completed' ? '#4ade80' : 
+                           wf.status === 'running' ? '#60a5fa' : 
+                           wf.status === 'failed' ? '#f87171' : '#ccc'
+                  }}>
+                    {wf.status || 'Unknown'}
+                  </span>
+                  <span style={{ fontSize: '14px', color: '#666' }}>
+                    {wf.createdAt ? new Date(wf.createdAt).toLocaleDateString() : 'Just now'}
+                  </span>
                 </div>
               </div>
+              
+              {wf.status === 'running' && (
+                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', marginTop: '16px', overflow: 'hidden' }}>
+                   <div style={{ 
+                     height: '100%', 
+                     width: `${((wf.completedSteps || 0) / (wf.totalSteps || 1)) * 100}%`, 
+                     background: 'var(--color-primary, #6366f1)',
+                     transition: 'width 0.3s ease'
+                   }} />
+                </div>
+              )}
 
-              {expandedId === workflow.id && (
-                <div className="p-5 border-t border-[var(--color-border)] bg-[var(--color-background)]">
-                  <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-[var(--color-text-muted)]">Execution Steps</h4>
-                  <div className="space-y-4">
-                    {workflow.steps?.map((step, idx) => (
-                      <div key={step.id || idx} className="flex gap-4">
-                        <div className="flex flex-col items-center">
-                          <div className={`w-3 h-3 rounded-full mt-1.5 ${
-                            step.status === 'completed' ? 'bg-[var(--color-success)]' :
-                            step.status === 'running' ? 'bg-[var(--color-primary)] animate-pulse' :
-                            step.status === 'failed' ? 'bg-[var(--color-error)]' : 'bg-[var(--color-border)]'
-                          }`} />
-                          {idx !== workflow.steps.length - 1 && <div className="w-px h-full bg-[var(--color-border)] my-1" />}
-                        </div>
-                        <div className="pb-4 flex-1">
-                          <div className="flex justify-between items-start">
-                            <span className="font-medium text-sm">{step.name}</span>
-                            <span className="text-xs text-[var(--color-text-muted)]">
-                              {step.status}
-                            </span>
-                          </div>
-                          {step.error && (
-                            <p className="text-xs text-[var(--color-error)] mt-1 mt-2 p-2 bg-[var(--color-error)]/10 rounded border border-[var(--color-error)]/20">
-                              {step.error}
-                            </p>
-                          )}
-                          {step.completedAt && (
-                            <span className="text-xs text-[var(--color-text-muted)] block mt-1">
-                              Completed: {new Date(step.completedAt).toLocaleTimeString()}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+              {expandedId === wf.id && (
+                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <ul style={{ margin: 0, paddingLeft: '20px', color: '#888', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '14px' }}>
+                    <li style={{ color: '#fff' }}>Data Collection</li>
+                    <li style={{ color: wf.status === 'running' ? '#60a5fa' : '#fff' }}>Transformation & Cleaning {wf.status === 'running' && '...'}</li>
+                    <li style={{ color: wf.status === 'completed' ? '#4ade80' : '#888' }}>Load to Dataset</li>
+                  </ul>
                 </div>
               )}
             </div>

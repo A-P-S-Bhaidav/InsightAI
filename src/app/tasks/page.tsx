@@ -1,135 +1,147 @@
 'use client';
-
-import { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Filter } from 'lucide-react';
-import TaskCard from '@/components/tasks/TaskCard';
-import Skeleton from '@/components/common/Skeleton';
-import EmptyState from '@/components/common/EmptyState';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-interface Task {
-  id: string;
-  title: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  createdAt: string;
-  prompt: string;
-  description?: string;
-  progress: number;
-  priority: 'low' | 'medium' | 'high';
-}
-
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [statusFilter, setStatusFilter] = useState('All');
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all'|'pending'|'running'|'completed'|'failed'>('all');
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-
-  const fetchTasks = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/tasks?page=${page}&limit=10&status=${statusFilter !== 'all' ? statusFilter : ''}&search=${encodeURIComponent(searchQuery)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setTasks(data.data || []);
-        setTotal(data.total || 0);
-      }
-    } catch (error) {
-      console.error('Failed to fetch tasks:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, statusFilter, searchQuery]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchTasks();
-  }, [fetchTasks]);
+    fetch('/api/tasks')
+      .then(res => res.json())
+      .then(data => {
+        setTasks(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
+
+  const filteredTasks = statusFilter === 'All' 
+    ? tasks 
+    : tasks.filter(t => t.status === statusFilter.toLowerCase());
 
   return (
-    <div className="animate-fade-in p-6 max-w-7xl mx-auto space-y-6">
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Tasks</h1>
-          <p className="text-[var(--color-text-muted)]">Manage your data collection tasks</p>
-        </div>
-        <Link href="/tasks/new" className="btn btn-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          New Task
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#fff' }}>Tasks</h1>
+        <Link 
+          href="/tasks/new"
+          style={{
+            background: 'var(--color-primary, #6366f1)',
+            color: '#fff',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            fontSize: '14px',
+            fontWeight: 500
+          }}
+        >
+          + New Task
         </Link>
-      </header>
+      </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 items-center bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)] shadow-sm">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
-          <input 
-            type="text" 
-            placeholder="Search tasks..." 
-            className="search-input w-full pl-9 pr-4 py-2 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter className="w-4 h-4 text-[var(--color-text-muted)]" />
-          <select 
-            className="select flex-1 sm:w-48 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as 'all'|'pending'|'running'|'completed'|'failed')}
+      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '16px' }}>
+        {['All', 'Pending', 'Running', 'Completed', 'Failed'].map(status => (
+          <button
+            key={status}
+            onClick={() => setStatusFilter(status)}
+            style={{
+              background: statusFilter === status ? 'rgba(99,102,241,0.15)' : 'transparent',
+              color: statusFilter === status ? 'var(--color-primary, #6366f1)' : '#888',
+              border: 'none',
+              padding: '6px 12px',
+              borderRadius: '999px',
+              fontSize: '14px',
+              cursor: 'pointer',
+              fontWeight: 500
+            }}
           >
-            <option value="all">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="running">Running</option>
-            <option value="completed">Completed</option>
-            <option value="failed">Failed</option>
-          </select>
-        </div>
+            {status}
+          </button>
+        ))}
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Skeleton height="12rem" />
-          <Skeleton height="12rem" />
-          <Skeleton height="12rem" />
-          <Skeleton height="12rem" />
+        <div style={{ color: '#888' }}>Loading tasks...</div>
+      ) : filteredTasks.length === 0 ? (
+        <div style={{ 
+          background: 'rgba(255,255,255,0.03)', 
+          border: '1px dashed rgba(255,255,255,0.1)', 
+          borderRadius: '12px', 
+          padding: '40px', 
+          textAlign: 'center' 
+        }}>
+          <p style={{ color: '#888', marginBottom: '16px' }}>No tasks found. Create your first task to get started.</p>
+          <Link 
+            href="/tasks/new"
+            style={{
+              background: 'var(--color-primary, #6366f1)',
+              color: '#fff',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontSize: '14px',
+              fontWeight: 500,
+              display: 'inline-block'
+            }}
+          >
+            Create Task
+          </Link>
         </div>
-      ) : tasks.length === 0 ? (
-        <EmptyState 
-          title="No tasks found" 
-          description={searchQuery ? "Try adjusting your filters" : "Create your first data collection task to get started"}
-          action={{ label: "Create Task", href: "/tasks/new" }}
-        />
       ) : (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {tasks.map(task => (
-              <TaskCard key={task.id} task={task} />
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between border-t border-[var(--color-border)] pt-4 mt-6">
-            <div className="text-sm text-[var(--color-text-muted)]">
-              Showing {Math.min((page - 1) * 10 + 1, total)} to {Math.min(page * 10, total)} of {total} results
-            </div>
-            <div className="flex gap-2">
-              <button 
-                className="btn btn-secondary btn-sm"
-                disabled={page === 1}
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-              >
-                Previous
-              </button>
-              <button 
-                className="btn btn-secondary btn-sm"
-                disabled={page * 10 >= total}
-                onClick={() => setPage(p => p + 1)}
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {filteredTasks.map(task => (
+            <Link 
+              key={task.id} 
+              href={`/tasks/${task.id}`}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '12px',
+                padding: '20px',
+                textDecoration: 'none',
+                color: 'inherit',
+                transition: 'border-color 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff' }}>{task.title || 'Untitled Task'}</span>
+                <span style={{ fontSize: '14px', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '400px' }}>
+                  {task.prompt}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                <span style={{
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  background: task.status === 'completed' ? 'rgba(34,197,94,0.1)' : 
+                              task.status === 'running' ? 'rgba(59,130,246,0.1)' : 
+                              task.status === 'failed' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.1)',
+                  color: task.status === 'completed' ? '#4ade80' : 
+                         task.status === 'running' ? '#60a5fa' : 
+                         task.status === 'failed' ? '#f87171' : '#ccc'
+                }}>
+                  {task.status || 'unknown'}
+                </span>
+                <span style={{ fontSize: '14px', color: '#666' }}>
+                  {task.createdAt ? new Date(task.createdAt).toLocaleDateString() : 'Just now'}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
       )}
     </div>
   );

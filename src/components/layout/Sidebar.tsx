@@ -1,58 +1,161 @@
-'use client'
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ListTodo, Plus, Database, GitBranch, Settings, Brain, ChevronLeft, ChevronRight } from 'lucide-react';
+import { signOut } from 'next-auth/react';
+import {
+  LayoutDashboard, ListTodo, Plus, Database, GitBranch,
+  Settings, Brain, ChevronLeft, ChevronRight, LogOut,
+} from 'lucide-react';
 
-export function Sidebar() {
+const NAV_ITEMS = [
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Tasks', href: '/tasks', icon: ListTodo },
+  { name: 'New Task', href: '/tasks/new', icon: Plus },
+  { name: 'Datasets', href: '/datasets', icon: Database },
+  { name: 'Workflows', href: '/workflows', icon: GitBranch },
+  { name: 'Settings', href: '/settings', icon: Settings },
+];
+
+export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
     const saved = localStorage.getItem('sidebar_collapsed');
-    if (saved) setCollapsed(saved === 'true');
+    if (saved === 'true') setCollapsed(true);
   }, []);
 
-  const toggleSidebar = () => {
-    const newVal = !collapsed;
-    setCollapsed(newVal);
-    localStorage.setItem('sidebar_collapsed', String(newVal));
+  const toggle = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem('sidebar_collapsed', String(next));
   };
 
-  const navItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Tasks', href: '/tasks', icon: ListTodo },
-    { name: 'New Task', href: '/tasks/new', icon: Plus },
-    { name: 'Datasets', href: '/datasets', icon: Database },
-    { name: 'Workflows', href: '/workflows', icon: GitBranch },
-    { name: 'Settings', href: '/settings', icon: Settings },
-  ];
+  const w = collapsed ? 68 : 260;
 
   return (
-    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
-      <div className="sidebar-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem' }}>
-        <Brain className="sidebar-logo-icon" size={32} />
-        {!collapsed && <span className="sidebar-logo-text" style={{ fontSize: '1.25rem', fontWeight: 600 }}>InsightAI</span>}
+    <aside
+      style={{
+        width: w,
+        minWidth: w,
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: '#0d0d14',
+        borderRight: '1px solid rgba(255,255,255,0.06)',
+        transition: 'width 200ms ease, min-width 200ms ease',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Logo */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: collapsed ? '20px 0' : '20px 20px',
+          justifyContent: collapsed ? 'center' : 'flex-start',
+        }}
+      >
+        <Brain size={28} color="#6366f1" style={{ flexShrink: 0 }} />
+        {!collapsed && (
+          <span style={{ fontSize: 18, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>
+            InsightAI
+          </span>
+        )}
       </div>
-      <nav className="sidebar-nav" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0 0.5rem' }}>
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
+
+      {/* Nav */}
+      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4, padding: collapsed ? '0 8px' : '0 12px', marginTop: 8 }}>
+        {NAV_ITEMS.map((item) => {
+          const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'));
+          const Icon = item.icon;
           return (
-            <Link key={item.name} href={item.href} className={`sidebar-link ${isActive ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '0.5rem' }}>
-              <item.icon className="sidebar-icon" size={20} />
-              {!collapsed && <span className="sidebar-link-text">{item.name}</span>}
+            <Link
+              key={item.name}
+              href={item.href}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                height: 44,
+                padding: collapsed ? '0 0' : '0 12px',
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                borderRadius: 8,
+                textDecoration: 'none',
+                fontSize: 14,
+                fontWeight: active ? 500 : 400,
+                color: active ? '#818cf8' : '#999',
+                background: active ? 'rgba(99,102,241,0.12)' : 'transparent',
+                borderLeft: active ? '3px solid #6366f1' : '3px solid transparent',
+                transition: 'background 150ms ease, color 150ms ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+              }}
+              onMouseLeave={(e) => {
+                if (!active) e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              <Icon size={20} style={{ flexShrink: 0 }} />
+              {!collapsed && <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</span>}
             </Link>
           );
         })}
       </nav>
-      <div className="sidebar-footer" style={{ marginTop: 'auto', padding: '1rem', borderTop: '1px solid var(--color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button className="sidebar-toggle btn btn-ghost btn-icon" onClick={toggleSidebar}>
-          {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+
+      {/* Footer */}
+      <div style={{ padding: collapsed ? '16px 8px' : '16px 12px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* Logout */}
+        <button
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            height: 40,
+            padding: collapsed ? '0' : '0 12px',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            borderRadius: 8,
+            border: 'none',
+            background: 'transparent',
+            color: '#666',
+            fontSize: 14,
+            cursor: 'pointer',
+            width: '100%',
+            transition: 'color 150ms',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = '#666'; }}
+        >
+          <LogOut size={18} style={{ flexShrink: 0 }} />
+          {!collapsed && <span>Logout</span>}
         </button>
-        {!collapsed && <span className="sidebar-version" style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>v1.0.0</span>}
+
+        {/* Collapse toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between' }}>
+          <button
+            onClick={toggle}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 32,
+              height: 32,
+              borderRadius: 6,
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.03)',
+              color: '#888',
+              cursor: 'pointer',
+            }}
+          >
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
+          {!collapsed && <span style={{ fontSize: 12, color: '#555' }}>v2.0</span>}
+        </div>
       </div>
     </aside>
   );
 }
-
-export default Sidebar;

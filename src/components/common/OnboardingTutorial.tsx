@@ -1,224 +1,191 @@
-'use client';
+'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Brain, PlusCircle, GitMerge, BarChart2, Download, LayoutDashboard, X } from 'lucide-react';
+import { Brain, Plus, GitBranch, BarChart3, LayoutDashboard } from 'lucide-react';
 
 interface OnboardingTutorialProps {
-  onComplete: () => void;
+  onComplete?: () => void;
 }
 
 const STEPS = [
   {
+    icon: <Brain size={24} />,
     title: 'Welcome to InsightAI!',
-    description: "Let's take a quick tour of what you can do.",
-    icon: Brain,
+    description: "Your AI-powered data intelligence platform. Let's show you around.",
+    color: '#8b5cf6'
   },
   {
-    title: 'Create Task',
-    description: 'Start by describing what data you need in plain English.',
-    icon: PlusCircle,
+    icon: <Plus size={24} />,
+    title: 'Create Smart Tasks',
+    description: 'Describe the data you need in plain English. Our AI will parse your requirements automatically.',
+    color: '#3b82f6'
   },
   {
-    title: 'AI Pipeline',
-    description: 'Our AI creates a smart pipeline to collect, validate, and structure your data.',
-    icon: GitMerge,
+    icon: <GitBranch size={24} />,
+    title: 'Automated Pipelines',
+    description: 'InsightAI generates multi-step workflows to collect, validate, and structure your data.',
+    color: '#10b981'
   },
   {
-    title: 'View Results',
-    description: 'View your collected data in tables and charts, with quality scoring.',
-    icon: BarChart2,
+    icon: <BarChart3 size={24} />,
+    title: 'Explore Your Data',
+    description: 'View collected datasets in interactive tables and charts. Export as CSV or JSON anytime.',
+    color: '#f59e0b'
   },
   {
-    title: 'Export',
-    description: 'Export your datasets as CSV, JSON, or PDF anytime.',
-    icon: Download,
-  },
-  {
-    title: 'Dashboard',
-    description: 'Track all your tasks and data quality from this dashboard. You\'re all set!',
-    icon: LayoutDashboard,
+    icon: <LayoutDashboard size={24} />,
+    title: 'Your Command Center',
+    description: 'Track all tasks, monitor quality scores, and manage your data operations from this dashboard.',
+    color: '#ec4899'
   }
 ];
 
-export function OnboardingTutorial({ onComplete }: OnboardingTutorialProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function OnboardingTutorial({ onComplete }: OnboardingTutorialProps) {
+  const [isVisible, setIsVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [dontShowAgain, setDontShowAgain] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        const localStatus = localStorage.getItem('insightai_onboarding_completed');
-        if (localStatus === 'true') {
-          setIsLoading(false);
-          return;
-        }
-
-        const res = await fetch('/api/user/onboarding');
-        const data = await res.json();
-        
-        if (!data.hasCompletedOnboarding) {
-          setIsOpen(true);
-        } else {
-          localStorage.setItem('insightai_onboarding_completed', 'true');
-        }
-      } catch (e) {
-        console.error('Failed to fetch onboarding status', e);
-        // Fallback to local storage if API fails
-        if (!localStorage.getItem('insightai_onboarding_completed')) {
-          setIsOpen(true);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    checkStatus();
+    const done = localStorage.getItem('insightai_onboarding_done');
+    if (done !== 'true') {
+      setIsVisible(true);
+    }
   }, []);
 
-  const completeOnboarding = async (skipAndDontShow: boolean = false) => {
-    setIsOpen(false);
-    onComplete();
-    
-    if (skipAndDontShow || currentStep === STEPS.length - 1) {
-      localStorage.setItem('insightai_onboarding_completed', 'true');
-      try {
-        await fetch('/api/user/onboarding', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-        });
-      } catch (e) {
-        console.error('Failed to complete onboarding API call', e);
-      }
+  const handleComplete = () => {
+    localStorage.setItem('insightai_onboarding_done', 'true');
+    setIsVisible(false);
+    fetch('/api/user/onboarding', { method: 'PATCH' }).catch(() => {});
+    if (onComplete) {
+      onComplete();
     }
   };
 
-  const handleNext = () => {
-    if (currentStep < STEPS.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    } else {
-      completeOnboarding();
-    }
-  };
+  if (!isVisible) return null;
 
-  const handleSkip = () => {
-    completeOnboarding(dontShowAgain);
-  };
-
-  if (isLoading || !isOpen) return null;
-
-  const StepIcon = STEPS[currentStep].icon;
-  const progressPercentage = ((currentStep + 1) / STEPS.length) * 100;
+  const step = STEPS[currentStep];
 
   return (
     <div style={{
       position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.7)',
-      backdropFilter: 'blur(4px)',
+      inset: 0,
+      zIndex: 9999,
+      background: 'rgba(0,0,0,0.8)',
+      backdropFilter: 'blur(8px)',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      padding: 'var(--spacing-md)'
+      justifyContent: 'center'
     }}>
-      <div className="card animate-fade-in" style={{ 
-        width: '100%', 
-        maxWidth: '520px', 
-        padding: 0, 
-        overflow: 'hidden',
-        position: 'relative'
+      <div style={{
+        maxWidth: '480px',
+        width: '100%',
+        margin: '0 20px',
+        background: '#14141e',
+        borderRadius: '16px',
+        padding: '40px',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        {/* Progress Bar */}
-        <div style={{ width: '100%', height: '4px', backgroundColor: 'var(--color-bg-tertiary)' }}>
-          <div style={{ 
-            height: '100%', 
-            width: `${progressPercentage}%`, 
-            backgroundColor: 'var(--color-primary)',
-            transition: 'width 0.3s ease'
+        {/* Progress bar */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: 'rgba(255,255,255,0.1)'
+        }}>
+          <div style={{
+            height: '100%',
+            background: step.color,
+            width: `${((currentStep + 1) / STEPS.length) * 100}%`,
+            transition: 'width 0.3s ease, background 0.3s ease'
           }} />
         </div>
 
-        <div style={{ padding: 'var(--spacing-xl)' }}>
-          {/* Content */}
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            textAlign: 'center',
-            minHeight: '200px'
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{
+            width: '80px',
+            height: '80px',
+            borderRadius: '50%',
+            backgroundColor: `${step.color}1A`,
+            color: step.color,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.3s ease'
           }}>
-            <div style={{ 
-              marginBottom: 'var(--spacing-lg)',
-              color: 'var(--color-primary)',
-              animation: currentStep === 0 ? 'pulse 2s infinite' : 'none'
-            }}>
-              <StepIcon size={64} strokeWidth={1.5} />
-            </div>
-            
-            <h2 style={{ marginBottom: 'var(--spacing-sm)', color: 'var(--color-text-primary)' }}>
-              {STEPS[currentStep].title}
-            </h2>
-            <p style={{ color: 'var(--color-text-secondary)', lineHeight: '1.5' }}>
-              {STEPS[currentStep].description}
-            </p>
+            {React.cloneElement(step.icon as React.ReactElement<Record<string, unknown>>, { size: 48 })}
           </div>
 
-          {/* Footer Controls */}
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: 'var(--spacing-md)',
-            marginTop: 'var(--spacing-xl)' 
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--spacing-sm)' }}>
-              {STEPS.map((_, idx) => (
-                <div 
-                  key={idx}
-                  style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: idx === currentStep ? 'var(--color-primary)' : 'var(--color-bg-tertiary)',
-                    transition: 'background-color 0.3s ease'
-                  }}
-                />
-              ))}
-            </div>
+          <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginTop: '24px', textAlign: 'center', color: '#fff' }}>
+            {step.title}
+          </h2>
+          <p style={{ fontSize: '15px', color: '#999', textAlign: 'center', lineHeight: '1.6', marginTop: '12px' }}>
+            {step.description}
+          </p>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'var(--spacing-md)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <button 
-                  onClick={handleSkip}
-                  className="btn btn-ghost"
-                  style={{ padding: '0 var(--spacing-sm)' }}
+          <div style={{ display: 'flex', gap: '8px', marginTop: '32px' }}>
+            {STEPS.map((_, idx) => (
+              <div key={idx} style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: idx === currentStep ? step.color : 'rgba(255,255,255,0.2)',
+                transition: 'background 0.3s ease'
+              }} />
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px', marginTop: '32px', width: '100%' }}>
+            {currentStep < STEPS.length - 1 ? (
+              <>
+                <button
+                  onClick={handleComplete}
+                  style={{
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'transparent',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontWeight: 500
+                  }}
                 >
-                  Skip Tutorial
+                  Skip
                 </button>
-                {currentStep > 0 && (
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)', fontSize: '0.8rem', color: 'var(--color-text-tertiary)', marginTop: 'var(--spacing-xs)' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={dontShowAgain}
-                      onChange={(e) => setDontShowAgain(e.target.checked)}
-                      style={{ accentColor: 'var(--color-primary)' }}
-                    />
-                    Don't show again
-                  </label>
-                )}
-              </div>
-              
-              <button 
-                onClick={handleNext}
-                className="btn btn-primary"
+                <button
+                  onClick={() => setCurrentStep(prev => prev + 1)}
+                  style={{
+                    flex: 1,
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: step.color,
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontWeight: 500
+                  }}
+                >
+                  Next
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleComplete}
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: step.color,
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 500
+                }}
               >
-                {currentStep === STEPS.length - 1 ? 'Get Started' : 'Next'}
+                Get Started
               </button>
-            </div>
+            )}
           </div>
         </div>
       </div>

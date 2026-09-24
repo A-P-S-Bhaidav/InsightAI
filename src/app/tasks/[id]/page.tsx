@@ -1,237 +1,154 @@
 'use client';
-
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Play, Trash2, Clock, Calendar, Tag, Database, BarChart3 } from 'lucide-react';
-import Badge from '@/components/common/Badge';
-import Skeleton from '@/components/common/Skeleton';
-import TaskTimeline from '@/components/tasks/TaskTimeline';
-import Modal from '@/components/common/Modal';
-import { useToast } from '@/components/common/Toast';
+import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 
-interface WorkflowStep {
-  id: string;
-  name: string;
-  status: string;
-  type: string;
-  order: number;
-  startedAt?: string;
-  completedAt?: string;
-  error?: string;
-}
-
-interface Workflow {
-  id: string;
-  status: string;
-  progress: number;
-  steps: WorkflowStep[];
-}
-
-interface Dataset {
-  id: string;
-  name: string;
-  rowCount: number;
-  qualityScore: number;
-}
-
-interface Task {
-  id: string;
-  title: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  priority: 'low' | 'medium' | 'high';
-  createdAt: string;
-  updatedAt: string;
-  prompt: string;
-  workflows: Workflow[];
-  datasets: Dataset[];
-}
-
-export default function TaskDetailPage() {
-  const { id } = useParams() as { id: string };
-  const router = useRouter();
-  const { toast } = useToast();
-  
-  const [task, setTask] = useState<Task | null>(null);
+export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const [task, setTask] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [executing, setExecuting] = useState(false);
 
   useEffect(() => {
-    async function fetchTask() {
-      try {
-        const res = await fetch(`/api/tasks/${id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setTask(data);
-        } else {
-          toast('Failed to load task.', 'error');
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
+    fetch(`/api/tasks/${resolvedParams.id}`)
+      .then(res => res.json())
+      .then(data => {
+        setTask(data);
         setLoading(false);
-      }
-    }
-    fetchTask();
-  }, [id, toast]);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, [resolvedParams.id]);
 
-  const handleReRun = async () => {
+  const handleExecute = async () => {
+    setExecuting(true);
     try {
-      const res = await fetch(`/api/tasks/${id}/execute`, { method: 'POST' });
-      if (res.ok) {
-        toast('Task execution started.', 'success');
-        // Optionally refresh task data
-      } else {
-        throw new Error('Failed to execute');
-      }
-    } catch {
-      toast('Could not re-run task.', 'error');
+      await fetch(`/api/tasks/${resolvedParams.id}/execute`, { method: 'POST' });
+      setTask({ ...task, status: 'running' });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setExecuting(false);
     }
   };
 
-  const handleDelete = async () => {
-    try {
-      const res = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        toast('Task was removed.', 'success');
-        router.push('/tasks');
-      } else {
-        throw new Error('Failed to delete');
-      }
-    } catch {
-      toast('Could not delete task.', 'error');
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="p-6 max-w-5xl mx-auto space-y-6">
-        <Skeleton height="2rem" width="8rem" />
-        <Skeleton height="6rem" />
-        <Skeleton height="12rem" />
-      </div>
-    );
-  }
-
-  if (!task) {
-    return (
-      <div className="p-6 text-center">
-        <h2 className="text-xl">Task not found</h2>
-        <Link href="/tasks" className="text-[var(--color-primary)] hover:underline mt-4 inline-block">Back to Tasks</Link>
-      </div>
-    );
-  }
+  if (loading) return <div style={{ color: '#888' }}>Loading task...</div>;
+  if (!task) return <div style={{ color: '#f87171' }}>Task not found</div>;
 
   return (
-    <div className="animate-fade-in p-6 max-w-5xl mx-auto space-y-8">
-      <Link href="/tasks" className="inline-flex items-center text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Tasks
-      </Link>
-
-      <header className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold mb-3">{task.title}</h1>
-          <div className="flex flex-wrap gap-2">
-            <Badge 
-              variant={task.status === 'completed' ? 'success' : task.status === 'failed' ? 'error' : task.status === 'running' ? 'primary' : 'default'}
-              label={task.status}
-            />
-            <Badge variant="outline" label={`${task.priority} priority`} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#fff' }}>{task.title || 'Untitled Task'}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{
+                padding: '4px 8px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                background: task.status === 'completed' ? 'rgba(34,197,94,0.1)' : 
+                            task.status === 'running' ? 'rgba(59,130,246,0.1)' : 
+                            task.status === 'failed' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.1)',
+                color: task.status === 'completed' ? '#4ade80' : 
+                       task.status === 'running' ? '#60a5fa' : 
+                       task.status === 'failed' ? '#f87171' : '#ccc'
+              }}>
+                {task.status || 'unknown'}
+              </span>
+              <span style={{ color: '#666', fontSize: '14px' }}>
+                Created {task.createdAt ? new Date(task.createdAt).toLocaleString() : 'recently'}
+              </span>
+            </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button onClick={handleReRun} className="btn btn-secondary">
-            <Play className="w-4 h-4 mr-2" />
-            Re-run
-          </button>
-          <button onClick={() => setDeleteModalOpen(true)} className="btn btn-danger">
-            <Trash2 className="w-4 h-4 mr-2" />
+
+        <blockquote style={{
+          background: 'rgba(255,255,255,0.03)',
+          borderLeft: '3px solid var(--color-primary, #6366f1)',
+          padding: '16px',
+          borderRadius: '0 8px 8px 0',
+          margin: 0,
+          color: '#e2e8f0',
+          fontSize: '15px',
+          lineHeight: 1.6
+        }}>
+          {task.prompt || 'No prompt provided'}
+        </blockquote>
+
+        <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+          {task.status === 'pending' && (
+            <button 
+              onClick={handleExecute}
+              disabled={executing}
+              style={{
+                background: 'var(--color-primary, #6366f1)',
+                color: '#fff',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontWeight: 500,
+                cursor: executing ? 'not-allowed' : 'pointer',
+                opacity: executing ? 0.7 : 1
+              }}
+            >
+              {executing ? 'Executing...' : 'Execute Task'}
+            </button>
+          )}
+          {task.status === 'running' && (
+            <button disabled style={{
+              background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 500, cursor: 'not-allowed'
+            }}>
+              Running...
+            </button>
+          )}
+          {task.status === 'completed' && task.datasetId && (
+            <Link href={`/datasets/${task.datasetId}`} style={{
+              background: 'rgba(34,197,94,0.15)', color: '#4ade80', padding: '8px 16px', borderRadius: '8px', textDecoration: 'none', fontWeight: 500
+            }}>
+              View Dataset
+            </Link>
+          )}
+          <button style={{
+            background: 'transparent', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', padding: '8px 16px', borderRadius: '8px', fontWeight: 500, cursor: 'pointer'
+          }}>
             Delete
           </button>
         </div>
-      </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
-          <div className="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Tag className="w-5 h-5 text-[var(--color-primary)]" />
-              Original Prompt
-            </h3>
-            <p className="text-[var(--color-text)] bg-[var(--color-background)] p-4 rounded-lg border border-[var(--color-border)] whitespace-pre-wrap">
-              {task.prompt}
-            </p>
+        {task.status === 'failed' && (
+          <div style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', padding: '16px', borderRadius: '8px' }}>
+            <strong>Error:</strong> {task.errorMessage || 'An unknown error occurred during execution.'}
           </div>
-
-          {task.workflows && task.workflows.length > 0 && (
-            <div className="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6">
-              <h3 className="text-lg font-semibold mb-4">Execution Timeline</h3>
-              <TaskTimeline steps={task.workflows[0].steps.map((step, index) => ({...step, type: step.type || 'unknown', order: step.order ?? index}))} />
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <div className="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6">
-            <h3 className="text-lg font-semibold mb-4">Task Details</h3>
-            <div className="space-y-4 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-[var(--color-text-muted)] flex items-center gap-2">
-                  <Calendar className="w-4 h-4" /> Created
-                </span>
-                <span>{new Date(task.createdAt).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[var(--color-text-muted)] flex items-center gap-2">
-                  <Clock className="w-4 h-4" /> Updated
-                </span>
-                <span>{new Date(task.updatedAt).toLocaleDateString()}</span>
-              </div>
-            </div>
-          </div>
-
-          {task.datasets && task.datasets.length > 0 && (
-            <div className="card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Database className="w-5 h-5 text-[var(--color-secondary)]" />
-                Generated Datasets
-              </h3>
-              <div className="space-y-3">
-                {task.datasets.map(dataset => (
-                  <Link 
-                    key={dataset.id} 
-                    href={`/datasets/${dataset.id}`}
-                    className="block p-3 rounded-lg border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-[var(--color-background)] transition-colors"
-                  >
-                    <h4 className="font-medium mb-2">{dataset.name}</h4>
-                    <div className="flex justify-between text-xs text-[var(--color-text-muted)]">
-                      <span>{dataset.rowCount} rows</span>
-                      <span className="flex items-center gap-1">
-                        <BarChart3 className="w-3 h-3" /> {dataset.qualityScore}% quality
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
-      <Modal 
-        isOpen={deleteModalOpen} 
-        onClose={() => setDeleteModalOpen(false)}
-        title="Delete Task"
-      >
-        <div className="space-y-4">
-          <p>Are you sure you want to delete this task? This action cannot be undone.</p>
-          <div className="flex justify-end gap-3">
-            <button className="btn btn-ghost" onClick={() => setDeleteModalOpen(false)}>Cancel</button>
-            <button className="btn btn-danger" onClick={handleDelete}>Delete Task</button>
+      {(task.workflows || task.datasetId) && (
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '32px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 16px 0', color: '#fff' }}>Results & Pipeline</h2>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <h3 style={{ fontSize: '16px', margin: '0 0 12px 0', color: '#ccc' }}>Workflow Steps</h3>
+              <ul style={{ margin: 0, paddingLeft: '20px', color: '#888', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <li style={{ color: '#fff' }}>Initializing agents</li>
+                <li style={{ color: '#fff' }}>Fetching data sources</li>
+                <li style={{ color: task.status === 'running' ? '#60a5fa' : '#fff' }}>Processing context {task.status === 'running' && '...'}</li>
+                {task.status === 'completed' && <li style={{ color: '#4ade80' }}>Finalizing dataset</li>}
+              </ul>
+            </div>
+            
+            {task.datasetId && (
+               <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                 <h3 style={{ fontSize: '16px', margin: '0 0 12px 0', color: '#ccc' }}>Dataset Preview</h3>
+                 <p style={{ color: '#888', fontSize: '14px' }}>Data preview is available in the datasets view.</p>
+               </div>
+            )}
           </div>
         </div>
-      </Modal>
+      )}
     </div>
   );
 }

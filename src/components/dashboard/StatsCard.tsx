@@ -1,62 +1,41 @@
 import React from 'react';
-import { ArrowUp, ArrowDown } from 'lucide-react';
 
 interface StatsCardProps {
+  icon: React.ReactNode;
   title: string;
   value: string | number;
-  change?: number; // percentage, positive = green, negative = red
-  icon: React.ReactNode;
-  delay?: number;
+  color: string;
 }
 
-export default function StatsCard({ title, value, change, icon, delay = 0 }: StatsCardProps) {
-  const isPositive = change !== undefined && change >= 0;
-  const isNegative = change !== undefined && change < 0;
-  
+export default function StatsCard({ icon, title, value, color }: StatsCardProps) {
   return (
-    <div 
-      className="card animate-slide-up" 
-      style={{ 
-        animationDelay: `${delay}ms`, 
-        padding: '1.5rem', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        justifyContent: 'space-between',
-        height: '100%',
-        minHeight: '120px',
-        backgroundColor: 'var(--bg-surface)',
-        border: '1px solid var(--border-color)',
-        borderRadius: '12px'
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ color: 'var(--color-primary)' }}>
+    <div style={{
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(255,255,255,0.06)',
+      borderRadius: '12px',
+      padding: '24px',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+        <div style={{
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%',
+          backgroundColor: `${color}1A`, // 10% opacity hex
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: color
+        }}>
           {icon}
         </div>
-        {change !== undefined && (
-          <div 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.25rem', 
-              fontSize: '0.875rem', 
-              fontWeight: 500,
-              color: isPositive ? 'var(--color-success)' : isNegative ? 'var(--color-danger)' : 'var(--text-muted)' 
-            }}
-          >
-            {isPositive ? <ArrowUp size={16} /> : isNegative ? <ArrowDown size={16} /> : null}
-            <span>{Math.abs(change)}%</span>
-          </div>
-        )}
-      </div>
-      
-      <div style={{ marginTop: '1rem' }}>
-        <h3 style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ fontSize: '14px', color: '#888' }}>
           {title}
-        </h3>
-        <div style={{ fontSize: '2rem', fontWeight: 700, lineHeight: 1.2, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
-          {value}
         </div>
+      </div>
+      <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'white' }}>
+        {value}
       </div>
     </div>
   );
