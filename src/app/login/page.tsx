@@ -26,11 +26,16 @@ function LoginForm() {
     // Show error from NextAuth redirect
     const errorParam = searchParams.get('error');
     if (errorParam) {
-      setError(
-        errorParam === 'OAuthAccountNotLinked'
-          ? 'This email is already registered with a different sign-in method.'
-          : 'Authentication failed. Please try again.'
-      );
+      const errorMessages: Record<string, string> = {
+        OAuthAccountNotLinked: 'This email is already registered with a different sign-in method.',
+        OAuthCallbackError: 'OAuth callback failed. Check redirect URIs in Google Console.',
+        OAuthSignin: 'Could not start OAuth flow. Check GOOGLE_CLIENT_ID.',
+        OAuthCreateAccount: 'Could not create account. Database may have schema issues.',
+        Callback: 'Callback error during authentication.',
+        AccessDenied: 'Access denied. You may have cancelled the sign-in.',
+        Configuration: 'Server configuration error. Check AUTH_SECRET and provider env vars.',
+      };
+      setError(errorMessages[errorParam] || `Auth error: ${errorParam}`);
     }
   }, [searchParams]);
 
