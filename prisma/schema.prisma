@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  image     String?
+  apiKey    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tasks     Task[]
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  userId      String
+  title       String
+  prompt      String
+  status      String     @default("pending") // pending, running, completed, failed, paused
+  priority    String     @default("medium")  // low, medium, high
+  tags        String     @default("[]")
+  errorMessage String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workflows   Workflow[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Workflow {
+  id          String         @id @default(cuid())
+  taskId      String
+  name        String
+  description String?
+  status      String         @default("pending")
+  progress    Int            @default(0)
+  totalSteps  Int            @default(0)
+  config      String         @default("{}")
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  task        Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  steps       WorkflowStep[]
+  datasets    Dataset[]
+
+  @@index([taskId])
+  @@index([status])
+}
+
+model WorkflowStep {
+  id         String   @id @default(cuid())
+  workflowId String
+  name       String
+  type       String   // scrape, transform, validate, deduplicate, export
+  config     String   @default("{}")
+  status     String   @default("pending")
+  output     String   @default("{}")
+  error      String?
+  order      Int
+  startedAt  DateTime?
+  completedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+}
+
+model Dataset {
+  id           String      @id @default(cuid())
+  workflowId   String
+  name         String
+  description  String?
+  schema       String      @default("{}")
+  rowCount     Int         @default(0)
+  qualityScore Float       @default(0)
+  format       String      @default("json")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  workflow     Workflow    @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  dataPoints   DataPoint[]
+
+  @@index([workflowId])
+}
+
+model DataPoint {
+  id         String   @id @default(cuid())
+  datasetId  String
+  data       String   @default("{}")
+  sourceId   String?
+  isValid    Boolean  @default(true)
+  confidence Float    @default(1.0)
+  createdAt  DateTime @default(now())
+  dataset    Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  source     Source?  @relation(fields: [sourceId], references: [id])
+
+  @@index([datasetId])
+  @@index([sourceId])
+}
+
+model Source {
+  id             String      @id @default(cuid())
+  url            String
+  domain         String
+  title          String?
+  statusCode     Int?
+  responseTime   Int?
+  contentType    String?
+  fetchedAt      DateTime    @default(now())
+  dataPoints     DataPoint[]
+
+  @@index([domain])
+}

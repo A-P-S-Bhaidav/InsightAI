@@ -1,0 +1,18 @@
+services:
+  insightai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=file:./dev.db
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-insightai-secret}
+      - NEXTAUTH_URL=http://localhost:3000
+    volumes:
+      - insightai-data:/app/prisma
+    restart: unless-stopped
+
+volumes:
+  insightai-data:
