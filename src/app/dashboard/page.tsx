@@ -1,246 +1,227 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { ListTodo, CheckCircle, Database, TrendingUp, Plus, LayoutGrid, Download } from 'lucide-react';
-import StatsCard from '@/components/dashboard/StatsCard';
-import ActivityChart from '@/components/dashboard/ActivityChart';
-import TopSourcesChart from '@/components/dashboard/TopSourcesChart';
-import Skeleton from '@/components/common/Skeleton';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-
-interface Task {
-  id: string;
-  title: string;
-  status: string;
-  createdAt: string;
-  prompt: string;
-}
-
-interface Stats {
-  totalTasks: number;
-  completedTasks: number;
-  runningTasks: number;
-  totalDatasets: number;
-  totalDataPoints: number;
-  averageQualityScore: number;
-  recentTasks: Task[];
-  tasksByStatus: Record<string, number>;
-  tasksOverTime: Array<{ date: string; count: number }>;
-}
+import { ListTodo, CheckCircle, Database, TrendingUp } from 'lucide-react';
+import StatsCard from '@/components/dashboard/StatsCard';
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchStats() {
-      try {
-        const res = await fetch('/api/stats');
-        if (res.ok) {
-          const data = await res.json();
-          setStats(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch stats:', error);
-      } finally {
+    fetch('/api/stats')
+      .then(res => res.json())
+      .then(d => {
+        setData(d);
         setLoading(false);
-      }
-    }
-    fetchStats();
+      })
+      .catch(() => {
+        setData({
+          totalTasks: 0,
+          completedTasks: 0,
+          dataPoints: 0,
+          avgQuality: 0,
+          recentTasks: []
+        });
+        setLoading(false);
+      });
   }, []);
 
-  const chartData = stats?.tasksOverTime?.length 
-    ? stats.tasksOverTime.map(t => ({ date: t.date, tasks: t.count, datasets: Math.floor(t.count * 0.8) }))
-    : Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(); 
-        d.setDate(d.getDate() - (6 - i));
-        return { 
-          date: d.toLocaleDateString('en-US', { weekday: 'short' }), 
-          tasks: (i * 2) % 8 + 1, 
-          datasets: (i * 3) % 5 + 1 
-        };
-      });
-
-  if (loading) {
-    return (
-      <div className="animate-fade-in p-6 max-w-7xl mx-auto space-y-6" style={{ display: 'grid', gap: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <Skeleton width="16rem" height="2.5rem" className="mb-2" />
-            <Skeleton width="24rem" height="1.25rem" />
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
-          <Skeleton height="140px" />
-          <Skeleton height="140px" />
-          <Skeleton height="140px" />
-          <Skeleton height="140px" />
-        </div>
-        <Skeleton height="350px" />
-      </div>
-    );
-  }
-
-  // Handle empty state if no stats (assuming totalTasks === 0 means no data)
-  if (!loading && stats && stats.totalTasks === 0) {
-    return (
-      <div className="animate-fade-in p-6 max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <div style={{ background: 'var(--bg-surface-elevated)', padding: '3rem', borderRadius: '16px', border: '1px solid var(--border-color)', maxWidth: '500px' }}>
-          <Database size={48} className="mx-auto mb-4 text-[var(--color-primary)]" />
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-primary)' }}>Welcome to InsightAI</h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
-            Get started by creating your first task. Let AI handle the data collection and processing for you.
-          </p>
-          <Link href="/tasks/new" className="btn btn-primary" style={{ display: 'inline-flex', padding: '0.75rem 1.5rem', fontSize: '1rem' }}>
-            <Plus size={20} className="mr-2" />
-            Create First Task
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const getStatusBadgeClass = (status: string) => {
-    switch(status.toLowerCase()) {
-      case 'completed': return 'badge-success';
-      case 'running': return 'badge-info';
-      case 'failed': return 'badge-danger';
-      case 'pending': return 'badge-warning';
-      default: return 'badge';
+  const getStatusBadge = (status: string) => {
+    let color = '#999';
+    let bg = 'rgba(255,255,255,0.1)';
+    
+    if (status.toLowerCase() === 'completed') {
+      color = '#10b981';
+      bg = 'rgba(16,185,129,0.1)';
+    } else if (status.toLowerCase() === 'failed') {
+      color = '#ef4444';
+      bg = 'rgba(239,68,68,0.1)';
+    } else if (status.toLowerCase() === 'running') {
+      color = '#3b82f6';
+      bg = 'rgba(59,130,246,0.1)';
+    } else if (status.toLowerCase() === 'pending') {
+      color = '#f59e0b';
+      bg = 'rgba(245,158,11,0.1)';
     }
+
+    return (
+      <span style={{
+        padding: '4px 8px',
+        borderRadius: '12px',
+        fontSize: '12px',
+        fontWeight: 500,
+        color,
+        background: bg
+      }}>
+        {status}
+      </span>
+    );
   };
 
   return (
-    <div className="animate-fade-in p-6 max-w-7xl mx-auto" style={{ display: 'grid', gap: '1.5rem' }}>
-      
-      {/* Page Header */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      {/* Welcome Banner */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Dashboard</h1>
-          <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0 0', fontSize: '1rem' }}>
-            Overview of your data intelligence operations
-          </p>
+          <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#fff', margin: '0 0 8px 0' }}>Welcome back!</h1>
+          <p style={{ fontSize: '15px', color: '#999', margin: 0 }}>Here's what's happening with your data.</p>
         </div>
-        <div>
-          <select className="select" style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
-            <option>Last 7 Days</option>
-            <option>Last 30 Days</option>
-            <option>All Time</option>
-          </select>
-        </div>
-      </header>
+        <Link href="/tasks/new" style={{ textDecoration: 'none' }}>
+          <button style={{
+            background: '#3b82f6',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '12px 24px',
+            fontWeight: 500,
+            cursor: 'pointer'
+          }}>
+            + New Task
+          </button>
+        </Link>
+      </div>
 
       {/* Stats Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+        gap: '24px' 
+      }}>
         <StatsCard 
+          icon={<ListTodo size={20} />} 
           title="Total Tasks" 
-          value={stats?.totalTasks ?? 0} 
-          icon={<ListTodo size={24} />} 
-          change={12}
-          delay={100}
+          value={loading ? '-' : (data?.totalTasks || 0)} 
+          color="#3b82f6" 
         />
         <StatsCard 
+          icon={<CheckCircle size={20} />} 
           title="Completed" 
-          value={stats?.completedTasks ?? 0} 
-          icon={<CheckCircle size={24} />} 
-          change={5}
-          delay={200}
+          value={loading ? '-' : (data?.completedTasks || 0)} 
+          color="#10b981" 
         />
         <StatsCard 
+          icon={<Database size={20} />} 
           title="Data Points" 
-          value={stats?.totalDataPoints ?? 0} 
-          icon={<Database size={24} />} 
-          change={-2}
-          delay={300}
+          value={loading ? '-' : (data?.dataPoints || 0)} 
+          color="#8b5cf6" 
         />
         <StatsCard 
+          icon={<TrendingUp size={20} />} 
           title="Avg Quality" 
-          value={`${(stats?.averageQualityScore ?? 0).toFixed(1)}%`} 
-          icon={<TrendingUp size={24} />} 
-          change={1.5}
-          delay={400}
+          value={loading ? '-' : (data?.avgQuality || 0)} 
+          color="#f59e0b" 
         />
       </div>
 
-      {/* Row 2: Activity Chart & Quick Actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: '7fr 3fr', gap: '1.5rem' }}>
-        
-        {/* Activity Chart */}
-        <div className="card" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.5rem' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1.5rem' }}>Task Activity (Last 7 Days)</h2>
-          <ActivityChart data={chartData} />
-        </div>
-
-        {/* Quick Actions */}
-        <div className="card" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1.5rem' }}>Quick Actions</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, justifyContent: 'center' }}>
-            <Link href="/tasks/new" className="btn btn-primary" style={{ display: 'flex', justifyContent: 'center', width: '100%', padding: '0.75rem' }}>
-              <Plus size={18} className="mr-2" /> New Task
-            </Link>
-            <Link href="/datasets" className="btn btn-secondary" style={{ display: 'flex', justifyContent: 'center', width: '100%', padding: '0.75rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)' }}>
-              <LayoutGrid size={18} className="mr-2" /> View Datasets
-            </Link>
-            <button className="btn btn-secondary" style={{ display: 'flex', justifyContent: 'center', width: '100%', padding: '0.75rem', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)' }}>
-              <Download size={18} className="mr-2" /> Export All
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Row 3: Recent Tasks & Top Sources */}
-      <div style={{ display: 'grid', gridTemplateColumns: '6fr 4fr', gap: '1.5rem' }}>
-        
-        {/* Recent Tasks */}
-        <div className="card" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Recent Tasks</h2>
-            <Link href="/tasks" style={{ color: 'var(--color-primary)', fontSize: '0.875rem' }}>View all</Link>
-          </div>
+      {/* Two Column */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
+        gap: '24px' 
+      }}>
+        {/* Left: Recent Tasks card */}
+        <div style={{
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: '12px',
+          padding: '24px'
+        }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff', margin: '0 0 16px 0' }}>Recent Tasks</h2>
           
-          <table className="table" style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                <th style={{ padding: '0.75rem 0', fontWeight: 500 }}>Task Name</th>
-                <th style={{ padding: '0.75rem 0', fontWeight: 500 }}>Date</th>
-                <th style={{ padding: '0.75rem 0', fontWeight: 500 }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats?.recentTasks?.slice(0, 5).map((task) => (
-                <tr key={task.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                  <td style={{ padding: '1rem 0' }}>
-                    <Link href={`/tasks/${task.id}`} style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
-                      {task.title}
-                    </Link>
-                  </td>
-                  <td style={{ padding: '1rem 0', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                    {new Date(task.createdAt).toLocaleDateString()}
-                  </td>
-                  <td style={{ padding: '1rem 0' }}>
-                    <span className={`badge ${getStatusBadgeClass(task.status)}`}>
-                      {task.status}
-                    </span>
-                  </td>
+          {loading ? (
+            <div style={{ color: '#888', padding: '24px 0', textAlign: 'center' }}>Loading tasks...</div>
+          ) : data?.recentTasks && data.recentTasks.length > 0 ? (
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <th style={{ padding: '0 8px 12px 0', color: '#888', fontWeight: 500, fontSize: '13px' }}>Task Name</th>
+                  <th style={{ padding: '0 8px 12px', color: '#888', fontWeight: 500, fontSize: '13px' }}>Status</th>
+                  <th style={{ padding: '0 0 12px 8px', color: '#888', fontWeight: 500, fontSize: '13px', textAlign: 'right' }}>Created</th>
                 </tr>
-              ))}
-              {(!stats?.recentTasks || stats.recentTasks.length === 0) && (
-                <tr>
-                  <td colSpan={3} style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    No recent tasks found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.recentTasks.slice(0, 5).map((task: any, i: number) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', height: '48px' }}>
+                    <td style={{ color: '#fff', fontSize: '14px', paddingRight: '8px' }}>{task.name || `Task #${task.id || i}`}</td>
+                    <td style={{ padding: '0 8px' }}>{getStatusBadge(task.status || 'pending')}</td>
+                    <td style={{ color: '#888', fontSize: '13px', textAlign: 'right', paddingLeft: '8px' }}>
+                      {task.createdAt ? new Date(task.createdAt).toLocaleDateString() : '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div style={{ color: '#888', padding: '24px 0', textAlign: 'center' }}>
+              No tasks yet. Create your first task to get started.
+            </div>
+          )}
         </div>
 
-        {/* Top Sources */}
-        <div className="card" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.5rem' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1.5rem' }}>Top Sources</h2>
-          <TopSourcesChart />
+        {/* Right: Quick Actions card */}
+        <div style={{
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: '12px',
+          padding: '24px'
+        }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff', margin: '0 0 16px 0' }}>Quick Actions</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <Link href="/tasks/new" style={{ textDecoration: 'none' }}>
+              <button style={{
+                width: '100%',
+                height: '44px',
+                background: '#3b82f6',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                Create New Task
+              </button>
+            </Link>
+            <Link href="/datasets" style={{ textDecoration: 'none' }}>
+              <button style={{
+                width: '100%',
+                height: '44px',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '8px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                View All Datasets
+              </button>
+            </Link>
+            <Link href="/workflows" style={{ textDecoration: 'none' }}>
+              <button style={{
+                width: '100%',
+                height: '44px',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '8px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                Browse Workflows
+              </button>
+            </Link>
+          </div>
         </div>
-
       </div>
     </div>
   );
