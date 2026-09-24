@@ -43,8 +43,8 @@ export default function DashboardPage() {
   const stats = [
     { icon: <ListTodo size={18} />, title: 'Total Tasks', value: data?.totalTasks || 0, color: '#3b82f6' },
     { icon: <CheckCircle size={18} />, title: 'Completed', value: data?.completedTasks || 0, color: '#10b981' },
-    { icon: <Database size={18} />, title: 'Data Points', value: data?.dataPoints || 0, color: '#8b5cf6' },
-    { icon: <TrendingUp size={18} />, title: 'Avg Quality', value: data?.avgQuality || 0, color: '#f59e0b' },
+    { icon: <Database size={18} />, title: 'Data Points', value: data?.totalDataPoints || 0, color: '#8b5cf6' },
+    { icon: <TrendingUp size={18} />, title: 'Avg Quality', value: data?.averageQualityScore ? `${Math.round(data.averageQualityScore)}%` : '0%', color: '#f59e0b' },
   ];
 
   return (
