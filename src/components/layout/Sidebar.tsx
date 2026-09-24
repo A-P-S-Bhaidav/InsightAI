@@ -33,7 +33,7 @@ export default function Sidebar() {
     localStorage.setItem('sidebar_collapsed', String(next));
   };
 
-  const w = collapsed ? 68 : 260;
+  const w = collapsed ? 68 : 240;
 
   return (
     <aside
@@ -43,117 +43,69 @@ export default function Sidebar() {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        background: '#0d0d14',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
+        background: 'var(--bg-surface)',
+        borderRight: '1px solid var(--border-color)',
         transition: 'width 200ms ease, min-width 200ms ease',
         overflow: 'hidden',
       }}
     >
-      {/* Logo */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: collapsed ? '20px 0' : '20px 20px',
-          justifyContent: collapsed ? 'center' : 'flex-start',
-        }}
-      >
-        <Brain size={28} color="#6366f1" style={{ flexShrink: 0 }} />
-        {!collapsed && (
-          <span style={{ fontSize: 18, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>
-            InsightAI
-          </span>
-        )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '16px 0' : '16px 16px', justifyContent: collapsed ? 'center' : 'flex-start' }}>
+        <Brain size={26} color="var(--color-primary)" style={{ flexShrink: 0 }} />
+        {!collapsed && <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>InsightAI</span>}
       </div>
 
-      {/* Nav */}
-      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4, padding: collapsed ? '0 8px' : '0 12px', marginTop: 8 }}>
+      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, padding: collapsed ? '0 8px' : '0 10px', marginTop: 4 }}>
         {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'));
+          const active = pathname === item.href || (item.href !== '/dashboard' && item.href !== '/tasks/new' && pathname.startsWith(item.href + '/'));
           const Icon = item.icon;
           return (
             <Link
               key={item.name}
               href={item.href}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                height: 44,
-                padding: collapsed ? '0 0' : '0 12px',
+                display: 'flex', alignItems: 'center', gap: 10,
+                height: 40, padding: collapsed ? '0' : '0 12px',
                 justifyContent: collapsed ? 'center' : 'flex-start',
-                borderRadius: 8,
-                textDecoration: 'none',
-                fontSize: 14,
-                fontWeight: active ? 500 : 400,
-                color: active ? '#818cf8' : '#999',
-                background: active ? 'rgba(99,102,241,0.12)' : 'transparent',
-                borderLeft: active ? '3px solid #6366f1' : '3px solid transparent',
+                borderRadius: 8, textDecoration: 'none', fontSize: 13.5, fontWeight: active ? 500 : 400,
+                color: active ? 'var(--color-primary)' : 'var(--text-secondary)',
+                background: active ? 'var(--color-primary-900)' : 'transparent',
+                borderLeft: active ? '3px solid var(--color-primary)' : '3px solid transparent',
                 transition: 'background 150ms ease, color 150ms ease',
               }}
-              onMouseEnter={(e) => {
-                if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-              }}
-              onMouseLeave={(e) => {
-                if (!active) e.currentTarget.style.background = 'transparent';
-              }}
             >
-              <Icon size={20} style={{ flexShrink: 0 }} />
+              <Icon size={18} style={{ flexShrink: 0 }} />
               {!collapsed && <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</span>}
             </Link>
           );
         })}
       </nav>
 
-      {/* Footer */}
-      <div style={{ padding: collapsed ? '16px 8px' : '16px 12px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {/* Logout */}
+      <div style={{ padding: collapsed ? '12px 8px' : '12px 10px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: 6 }}>
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            height: 40,
-            padding: collapsed ? '0' : '0 12px',
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            borderRadius: 8,
-            border: 'none',
-            background: 'transparent',
-            color: '#666',
-            fontSize: 14,
-            cursor: 'pointer',
-            width: '100%',
-            transition: 'color 150ms',
+            display: 'flex', alignItems: 'center', gap: 10, height: 36,
+            padding: collapsed ? '0' : '0 12px', justifyContent: collapsed ? 'center' : 'flex-start',
+            borderRadius: 8, border: 'none', background: 'transparent',
+            color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', width: '100%',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = '#666'; }}
         >
-          <LogOut size={18} style={{ flexShrink: 0 }} />
+          <LogOut size={16} style={{ flexShrink: 0 }} />
           {!collapsed && <span>Logout</span>}
         </button>
-
-        {/* Collapse toggle */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between' }}>
           <button
             onClick={toggle}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 32,
-              height: 32,
-              borderRadius: 6,
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: 'rgba(255,255,255,0.03)',
-              color: '#888',
-              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 28, height: 28, borderRadius: 6,
+              border: '1px solid var(--border-color)', background: 'var(--bg-surface-elevated)',
+              color: 'var(--text-muted)', cursor: 'pointer',
             }}
           >
-            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
-          {!collapsed && <span style={{ fontSize: 12, color: '#555' }}>v2.0</span>}
+          {!collapsed && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>v2.0</span>}
         </div>
       </div>
     </aside>

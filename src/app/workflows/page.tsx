@@ -1,113 +1,79 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
+
+const cardStyle: React.CSSProperties = {
+  background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
+  borderRadius: 10, padding: 20,
+};
 
 export default function WorkflowsPage() {
   const [workflows, setWorkflows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/workflows')
-      .then(res => res.json())
-      .then(data => {
-        setWorkflows(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+      .then(r => r.json())
+      .then(d => { setWorkflows(Array.isArray(d) ? d : d.workflows || []); setLoading(false); })
+      .catch(() => setLoading(false));
   }, []);
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div>
-        <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#fff' }}>Workflows</h1>
-        <p style={{ color: '#888', margin: 0 }}>Monitor your data pipelines</p>
+  const badge = (status: string) => {
+    const map: Record<string, { c: string; bg: string }> = {
+      completed: { c: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+      failed: { c: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+      running: { c: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+      pending: { c: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+    };
+    const s = map[status?.toLowerCase()] || { c: 'var(--text-muted)', bg: 'var(--bg-surface-elevated)' };
+    return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500, color: s.c, background: s.bg }}>{status}</span>;
+  };
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
+        <Loader2 size={24} style={{ animation: 'spin 1s linear infinite', color: 'var(--text-muted)' }} />
       </div>
+    );
+  }
 
-      {loading ? (
-        <div style={{ color: '#888' }}>Loading workflows...</div>
-      ) : workflows.length === 0 ? (
-        <div style={{ 
-          background: 'rgba(255,255,255,0.03)', 
-          border: '1px dashed rgba(255,255,255,0.1)', 
-          borderRadius: '12px', 
-          padding: '40px', 
-          textAlign: 'center' 
-        }}>
-          <p style={{ color: '#888', margin: 0 }}>No workflows found.</p>
+  if (workflows.length === 0) {
+    return (
+      <div style={{ ...cardStyle, textAlign: 'center', padding: 60 }}>
+        <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>
+          No workflows yet. Workflows are generated when you execute tasks.
         </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {workflows.map(wf => (
-            <div
-              key={wf.id}
-              onClick={() => setExpandedId(expandedId === wf.id ? null : wf.id)}
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '12px',
-                padding: '20px',
-                cursor: 'pointer',
-                transition: 'border-color 0.2s ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'}
-              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff' }}>{wf.name || 'Unnamed Pipeline'}</span>
-                  <span style={{ fontSize: '14px', color: '#888' }}>
-                    {wf.completedSteps || 0} of {wf.totalSteps || 3} steps completed
-                  </span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                  <span style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    background: wf.status === 'completed' ? 'rgba(34,197,94,0.1)' : 
-                                wf.status === 'running' ? 'rgba(59,130,246,0.1)' : 
-                                wf.status === 'failed' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.1)',
-                    color: wf.status === 'completed' ? '#4ade80' : 
-                           wf.status === 'running' ? '#60a5fa' : 
-                           wf.status === 'failed' ? '#f87171' : '#ccc'
-                  }}>
-                    {wf.status || 'Unknown'}
-                  </span>
-                  <span style={{ fontSize: '14px', color: '#666' }}>
-                    {wf.createdAt ? new Date(wf.createdAt).toLocaleDateString() : 'Just now'}
-                  </span>
-                </div>
-              </div>
-              
-              {wf.status === 'running' && (
-                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', marginTop: '16px', overflow: 'hidden' }}>
-                   <div style={{ 
-                     height: '100%', 
-                     width: `${((wf.completedSteps || 0) / (wf.totalSteps || 1)) * 100}%`, 
-                     background: 'var(--color-primary, #6366f1)',
-                     transition: 'width 0.3s ease'
-                   }} />
-                </div>
-              )}
+        <Link href="/tasks/new" style={{ display: 'inline-block', marginTop: 16, color: 'var(--color-primary)', fontSize: 13, textDecoration: 'none' }}>
+          Create a Task →
+        </Link>
+      </div>
+    );
+  }
 
-              {expandedId === wf.id && (
-                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                  <ul style={{ margin: 0, paddingLeft: '20px', color: '#888', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '14px' }}>
-                    <li style={{ color: '#fff' }}>Data Collection</li>
-                    <li style={{ color: wf.status === 'running' ? '#60a5fa' : '#fff' }}>Transformation & Cleaning {wf.status === 'running' && '...'}</li>
-                    <li style={{ color: wf.status === 'completed' ? '#4ade80' : '#888' }}>Load to Dataset</li>
-                  </ul>
-                </div>
-              )}
-            </div>
-          ))}
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {workflows.map((wf: any) => (
+        <div key={wf.id} style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{wf.name}</div>
+            {badge(wf.status || 'pending')}
+          </div>
+          {/* Progress bar */}
+          <div style={{ height: 4, borderRadius: 2, background: 'var(--border-color)', marginBottom: 8 }}>
+            <div style={{
+              height: '100%', borderRadius: 2,
+              width: `${wf.totalSteps ? (wf.progress / wf.totalSteps) * 100 : 0}%`,
+              background: 'var(--color-primary)', transition: 'width 300ms',
+            }} />
+          </div>
+          <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-muted)' }}>
+            <span>{wf.progress || 0} of {wf.totalSteps || 0} steps</span>
+            <span>{wf.createdAt ? new Date(wf.createdAt).toLocaleDateString() : '—'}</span>
+          </div>
         </div>
-      )}
+      ))}
     </div>
   );
 }
