@@ -12,14 +12,20 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.11.3",
     "@google/generative-ai": "^0.24.1",
+    "@next/bundle-analyzer": "^16.3.6",
     "@prisma/client": "^6.9.0",
+    "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
     "date-fns": "^4.4.0",
+    "groq-sdk": "^1.6.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.47.0",
     "next": "16.3.6",
+    "next-auth": "^5.0.0-beta.32",
     "papaparse": "^5.7.0",
+    "rate-limiter-flexible": "^11.2.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "recharts": "^3.10.1",
@@ -27,6 +33,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/papaparse": "^5",
     "@types/react": "^19",

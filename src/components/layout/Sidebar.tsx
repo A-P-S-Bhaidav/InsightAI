@@ -20,7 +20,7 @@ export function Sidebar() {
   };
 
   const navItems = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Tasks', href: '/tasks', icon: ListTodo },
     { name: 'New Task', href: '/tasks/new', icon: Plus },
     { name: 'Datasets', href: '/datasets', icon: Database },

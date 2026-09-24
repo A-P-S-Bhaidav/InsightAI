@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/security';
 import prisma from '@/lib/db';
 import { parsePrompt, ParsedPrompt } from '@/lib/ai/prompt-parser';
 import { generateWorkflow } from '@/lib/ai/workflow-generator';
@@ -112,6 +113,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    const allowed = await rateLimit(ip);
+    if (!allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
     const { id } = await params;
     const task = await prisma.task.findUnique({ where: { id } });
 
