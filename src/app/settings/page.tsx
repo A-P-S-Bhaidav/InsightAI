@@ -1,161 +1,161 @@
 'use client';
-import { useState } from 'react';
+
+import React, { useState } from 'react';
+import { useTheme } from '@/components/layout/ThemeProvider';
+
+const TABS = ['Profile', 'Appearance', 'API Keys'];
+
+const cardStyle: React.CSSProperties = {
+  background: 'var(--bg-surface)',
+  border: '1px solid var(--border-color)',
+  borderRadius: 10,
+  padding: 24,
+};
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '10px 14px',
+  background: 'var(--bg-surface-elevated)',
+  border: '1px solid var(--border-color)',
+  borderRadius: 8,
+  color: 'var(--text-primary)',
+  fontSize: 14,
+  outline: 'none',
+};
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: 13,
+  fontWeight: 500,
+  color: 'var(--text-secondary)',
+  marginBottom: 6,
+};
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('Profile');
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [tab, setTab] = useState('Profile');
+  const { theme, toggleTheme } = useTheme();
+  const [name, setName] = useState('');
+  const [saved, setSaved] = useState(false);
 
-  const tabs = ['Profile', 'Appearance', 'API Keys'];
-
-  const cardStyle = {
-    background: 'rgba(255,255,255,0.03)',
-    border: '1px solid rgba(255,255,255,0.06)',
-    borderRadius: '12px',
-    padding: '32px'
-  };
-
-  const inputStyle = {
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '8px',
-    padding: '12px 16px',
-    color: '#fff',
-    width: '100%',
-    fontSize: '14px',
-    boxSizing: 'border-box' as const
-  };
-
-  const labelStyle = {
-    fontSize: '14px',
-    fontWeight: 500,
-    marginBottom: '8px',
-    display: 'block',
-    color: '#ccc'
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 24px 0', color: '#fff' }}>Settings</h1>
-
-      <div style={{ 
-        display: 'flex', 
-        gap: '8px', 
-        marginBottom: '32px', 
-        paddingBottom: '16px', 
-        borderBottom: '1px solid rgba(255,255,255,0.06)' 
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Tab bar — full width, evenly distributed */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: `repeat(${TABS.length}, 1fr)`, gap: 0,
+        background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 10, overflow: 'hidden',
       }}>
-        {tabs.map(tab => (
+        {TABS.map(t => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
+            key={t}
+            onClick={() => setTab(t)}
             style={{
-              background: activeTab === tab ? 'rgba(99,102,241,0.15)' : 'transparent',
-              color: activeTab === tab ? 'var(--color-primary, #6366f1)' : '#888',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '999px',
-              fontSize: '14px',
-              cursor: 'pointer',
-              fontWeight: 500,
-              transition: 'all 0.2s ease'
+              padding: '10px 0', fontSize: 13, fontWeight: tab === t ? 600 : 400, cursor: 'pointer',
+              background: tab === t ? 'var(--color-primary)' : 'transparent',
+              color: tab === t ? '#fff' : 'var(--text-secondary)',
+              border: 'none', borderRight: '1px solid var(--border-color)',
+              transition: 'all 150ms',
             }}
           >
-            {tab}
+            {t}
           </button>
         ))}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '600px' }}>
-        {activeTab === 'Profile' && (
-          <div style={cardStyle}>
-            <div style={{ marginBottom: '24px' }}>
+      {/* Tab content */}
+      {tab === 'Profile' && (
+        <div style={cardStyle}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 20px 0' }}>Profile Information</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
               <label style={labelStyle}>Full Name</label>
-              <input style={inputStyle} defaultValue="Admin User" />
+              <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="Your name" />
             </div>
-            <div style={{ marginBottom: '24px' }}>
+            <div>
               <label style={labelStyle}>Email</label>
-              <input style={{ ...inputStyle, opacity: 0.5, cursor: 'not-allowed' }} defaultValue="admin@insightai.com" disabled />
+              <input style={{ ...inputStyle, opacity: 0.6, cursor: 'not-allowed' }} disabled value="Loaded from session" />
             </div>
-            <div style={{ marginBottom: '24px' }}>
+            <div>
               <label style={labelStyle}>Role</label>
-              <div style={{ color: '#888', fontSize: '14px', padding: '12px 16px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
-                Administrator
+              <div style={{ fontSize: 14, color: 'var(--text-primary)', padding: '10px 14px', background: 'var(--bg-surface-elevated)', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+                User
               </div>
             </div>
-            <button style={{
-              background: 'var(--color-primary, #6366f1)', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 24px', fontSize: '14px', fontWeight: 500, cursor: 'pointer'
-            }}>
-              Save Changes
+            <button
+              onClick={handleSave}
+              style={{
+                alignSelf: 'flex-start', padding: '8px 20px', borderRadius: 8,
+                background: 'var(--color-primary)', color: '#fff', border: 'none',
+                fontSize: 13, fontWeight: 500, cursor: 'pointer',
+              }}
+            >
+              {saved ? '✓ Saved' : 'Save Changes'}
             </button>
           </div>
-        )}
+        </div>
+      )}
 
-        {activeTab === 'Appearance' && (
-          <div style={cardStyle}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: '16px', fontWeight: 500, color: '#fff', margin: '0 0 4px 0' }}>Theme</div>
-                <div style={{ fontSize: '14px', color: '#888' }}>{isDarkMode ? 'Dark Mode' : 'Light Mode'}</div>
+      {tab === 'Appearance' && (
+        <div style={cardStyle}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 20px 0' }}>Theme</h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500 }}>
+                {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
               </div>
-              <div 
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                style={{
-                  width: '44px',
-                  height: '24px',
-                  background: isDarkMode ? 'var(--color-primary, #6366f1)' : 'rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  transition: 'background 0.3s ease'
-                }}
-              >
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  background: '#fff',
-                  borderRadius: '50%',
-                  position: 'absolute',
-                  top: '2px',
-                  left: isDarkMode ? '22px' : '2px',
-                  transition: 'left 0.3s ease'
-                }} />
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+                Switch between dark and light appearance
               </div>
             </div>
+            <button
+              onClick={toggleTheme}
+              style={{
+                width: 48, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
+                background: theme === 'dark' ? 'var(--color-primary)' : 'var(--border-color)',
+                position: 'relative', transition: 'background 200ms',
+              }}
+            >
+              <div style={{
+                width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                position: 'absolute', top: 3,
+                left: theme === 'dark' ? 25 : 3,
+                transition: 'left 200ms',
+              }} />
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
-        {activeTab === 'API Keys' && (
-          <>
-            <div style={cardStyle}>
+      {tab === 'API Keys' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[
+            { name: 'Gemini API Key', env: 'GEMINI_API_KEY' },
+            { name: 'Groq API Key', env: 'GROQ_API_KEY' },
+          ].map(k => (
+            <div key={k.name} style={cardStyle}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontSize: '16px', fontWeight: 500, color: '#fff', margin: '0 0 4px 0' }}>Gemini API Key</div>
-                  <div style={{ fontSize: '14px', color: '#888' }}>Used for multimodal AI and reasoning tasks</div>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{k.name}</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>Environment: {k.env}</div>
                 </div>
-                <div style={{ fontSize: '14px', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  ✓ Configured
-                </div>
+                <span style={{
+                  padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                  color: '#10b981', background: 'rgba(16,185,129,0.12)',
+                }}>
+                  Configured ✓
+                </span>
               </div>
             </div>
-            
-            <div style={cardStyle}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: '16px', fontWeight: 500, color: '#fff', margin: '0 0 4px 0' }}>Groq API Key</div>
-                  <div style={{ fontSize: '14px', color: '#888' }}>Used for low-latency text generation</div>
-                </div>
-                <div style={{ fontSize: '14px', color: '#f87171', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  Not configured
-                </div>
-              </div>
-            </div>
-
-            <p style={{ fontSize: '13px', color: '#666', marginTop: '8px' }}>
-              Note: API keys are configured via environment variables on the server for security.
-            </p>
-          </>
-        )}
-      </div>
+          ))}
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', padding: '4px 0' }}>
+            API keys are configured via environment variables on the server.
+          </div>
+        </div>
+      )}
     </div>
   );
 }
