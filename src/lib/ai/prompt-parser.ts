@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { generateAIContent } from './client';
 
 export interface ParsedPrompt {
   dataType: string;
@@ -12,16 +12,7 @@ export interface ParsedPrompt {
 }
 
 export async function parsePrompt(prompt: string): Promise<ParsedPrompt> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return generateFallback(prompt);
-  }
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-    const systemInstruction = `
+  const systemInstruction = `
     You are an expert AI data requirement parser. Extract structured requirements from the user's natural-language business prompt.
     Return ONLY a JSON object conforming to the following structure, with no markdown formatting or extra text:
     {
@@ -34,16 +25,16 @@ export async function parsePrompt(prompt: string): Promise<ParsedPrompt> {
       "targetCount": number (or null if not specified),
       "description": "string (short summary of the task)"
     }
-    `;
+  `;
 
-    const result = await model.generateContent([systemInstruction, prompt]);
-    const responseText = result.response.text();
+  try {
+    const responseText = await generateAIContent(systemInstruction, prompt);
     
     // Clean up markdown if present
     const cleanedText = responseText.replace(/```json\n?|\n?```/g, '').trim();
     return JSON.parse(cleanedText) as ParsedPrompt;
   } catch (error) {
-    console.error('Error parsing prompt with Gemini:', error);
+    console.error('Error parsing prompt with AI client:', error);
     return generateFallback(prompt);
   }
 }

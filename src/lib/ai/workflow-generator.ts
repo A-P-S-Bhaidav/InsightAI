@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { generateAIContent } from './client';
 import { ParsedPrompt } from './prompt-parser';
 
 export interface WorkflowStepPlan {
@@ -15,16 +15,7 @@ export interface WorkflowPlan {
 }
 
 export async function generateWorkflow(parsed: ParsedPrompt): Promise<WorkflowPlan> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return generateFallbackWorkflow(parsed);
-  }
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-    const systemInstruction = `
+  const systemInstruction = `
     You are an expert data engineering AI. Generate a multi-step data collection workflow based on the parsed requirements.
     The workflow MUST include steps: scrape → transform → validate → deduplicate → export.
     Return ONLY a JSON object conforming to the following structure:
@@ -40,15 +31,15 @@ export async function generateWorkflow(parsed: ParsedPrompt): Promise<WorkflowPl
         }
       ]
     }
-    `;
+  `;
 
-    const result = await model.generateContent([systemInstruction, JSON.stringify(parsed)]);
-    const responseText = result.response.text();
+  try {
+    const responseText = await generateAIContent(systemInstruction, JSON.stringify(parsed));
     
     const cleanedText = responseText.replace(/```json\n?|\n?```/g, '').trim();
     return JSON.parse(cleanedText) as WorkflowPlan;
   } catch (error) {
-    console.error('Error generating workflow with Gemini:', error);
+    console.error('Error generating workflow with AI client:', error);
     return generateFallbackWorkflow(parsed);
   }
 }

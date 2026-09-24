@@ -4,31 +4,60 @@ import { ArrowUp, ArrowDown } from 'lucide-react';
 interface StatsCardProps {
   title: string;
   value: string | number;
-  change?: string;
-  changeType?: 'positive' | 'negative' | 'neutral';
+  change?: number; // percentage, positive = green, negative = red
   icon: React.ReactNode;
   delay?: number;
 }
 
-export function StatsCard({ title, value, change, changeType = 'neutral', icon, delay = 0 }: StatsCardProps) {
+export default function StatsCard({ title, value, change, icon, delay = 0 }: StatsCardProps) {
+  const isPositive = change !== undefined && change >= 0;
+  const isNegative = change !== undefined && change < 0;
+  
   return (
-    <div className="stat-card animate-slide-up card" style={{ animationDelay: `${delay}ms`, padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <div className="stat-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 className="stat-card-title" style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-muted)', fontWeight: 500 }}>{title}</h3>
-        <div className="stat-card-icon" style={{ color: 'var(--color-primary)' }}>{icon}</div>
-      </div>
-      <div className="stat-card-body" style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
-        <div className="stat-card-value" style={{ fontSize: '2rem', fontWeight: 700, lineHeight: 1 }}>{value}</div>
-        {change && (
-          <div className={`stat-card-change change-${changeType}`} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', color: changeType === 'positive' ? 'var(--color-success)' : changeType === 'negative' ? 'var(--color-danger)' : 'var(--color-muted)' }}>
-            {changeType === 'positive' && <ArrowUp size={16} />}
-            {changeType === 'negative' && <ArrowDown size={16} />}
-            <span>{change}</span>
+    <div 
+      className="card animate-slide-up" 
+      style={{ 
+        animationDelay: `${delay}ms`, 
+        padding: '1.5rem', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: 'space-between',
+        height: '100%',
+        minHeight: '120px',
+        backgroundColor: 'var(--bg-surface)',
+        border: '1px solid var(--border-color)',
+        borderRadius: '12px'
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ color: 'var(--color-primary)' }}>
+          {icon}
+        </div>
+        {change !== undefined && (
+          <div 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.25rem', 
+              fontSize: '0.875rem', 
+              fontWeight: 500,
+              color: isPositive ? 'var(--color-success)' : isNegative ? 'var(--color-danger)' : 'var(--text-muted)' 
+            }}
+          >
+            {isPositive ? <ArrowUp size={16} /> : isNegative ? <ArrowDown size={16} /> : null}
+            <span>{Math.abs(change)}%</span>
           </div>
         )}
+      </div>
+      
+      <div style={{ marginTop: '1rem' }}>
+        <h3 style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          {title}
+        </h3>
+        <div style={{ fontSize: '2rem', fontWeight: 700, lineHeight: 1.2, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
+          {value}
+        </div>
       </div>
     </div>
   );
 }
-
-export default StatsCard;

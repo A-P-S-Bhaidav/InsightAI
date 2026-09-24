@@ -6,6 +6,8 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { Metadata } from "next";
 
+import AppLayoutWrapper from "@/components/layout/AppLayoutWrapper";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -24,13 +26,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider>
           <ToastProvider>
-            <div className="app-layout">
-              <Sidebar />
-              <div className="main-content">
-                <Header />
-                <main>{children}</main>
-              </div>
-            </div>
+            <AppLayoutWrapper>{children}</AppLayoutWrapper>
           </ToastProvider>
         </ThemeProvider>
       </body>
