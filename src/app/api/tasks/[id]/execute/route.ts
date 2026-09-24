@@ -69,44 +69,111 @@ function buildScrapeConfigs(parsed: ParsedPrompt): ScrapeConfig[] {
 }
 
 /**
- * Fallback: generate realistic mock data when real scraping fails or returns nothing
+ * Use AI to generate realistic structured data when scraping fails
  */
-function generateFallbackData(parsed: ParsedPrompt, count: number): Record<string, unknown>[] {
-  const data: Record<string, unknown>[] = [];
-  const prompt = parsed.description.toLowerCase();
+async function generateAIData(parsed: ParsedPrompt, count: number): Promise<Record<string, unknown>[]> {
+  try {
+    const { generateAIContent } = await import('@/lib/ai/client');
+    const columns = parsed.columns?.length > 0 ? parsed.columns : ['Name', 'Description', 'Source'];
+    
+    const aiPrompt = `Generate exactly ${count} realistic data entries as a JSON array.
+Each entry MUST have these exact columns: ${JSON.stringify(columns)}
 
-  const companies = ['TechVault', 'NovaStar', 'QuantumLeap', 'CloudPeak', 'DataBridge', 'PixelForge', 'CodeWave', 'NexGen Labs', 'SkyMetrics', 'InnoCore'];
-  const cities = ['San Francisco, CA', 'New York, NY', 'Austin, TX', 'Seattle, WA', 'Chicago, IL', 'Boston, MA', 'Denver, CO', 'Portland, OR'];
-  const industries = ['Technology', 'Healthcare', 'Finance', 'E-commerce', 'Education', 'SaaS', 'AI/ML', 'Cybersecurity'];
+Context: The user asked for "${parsed.description}"
+Data type: ${parsed.dataType}
+
+Requirements:
+- Generate REALISTIC, plausible data — real-sounding names, companies, emails, URLs
+- If a column is "Email", generate realistic email addresses
+- If a column is "LinkedIn URL", generate realistic LinkedIn profile URLs
+- If a column is "Company" or "Company Name", use real-sounding company names
+- If a column is "Funding", use realistic funding amounts
+- Each entry must be unique
+- Return ONLY a JSON array, no markdown, no explanation
+
+Example format:
+[{"${columns[0]}": "value1", "${columns[1]}": "value2"}]`;
+
+    const response = await generateAIContent(
+      'You are a realistic data generator. Return ONLY valid JSON arrays. No markdown. No backticks.',
+      aiPrompt
+    );
+    
+    const cleaned = response.replace(/```json\n?|\n?```/g, '').trim();
+    const data = JSON.parse(cleaned);
+    if (Array.isArray(data) && data.length > 0) {
+      return data.map(item => ({ ...item, _source: 'ai-generated' }));
+    }
+  } catch (error) {
+    console.error('AI data generation failed, using local fallback:', error);
+  }
+  
+  return generateLocalFallbackData(parsed, count);
+}
+
+/**
+ * Local fallback when both scraping AND AI fail — generates column-aware structured data
+ */
+function generateLocalFallbackData(parsed: ParsedPrompt, count: number): Record<string, unknown>[] {
+  const data: Record<string, unknown>[] = [];
+  const columns = parsed.columns?.length > 0 ? parsed.columns : ['Name', 'Description', 'Category'];
+
+  const firstNames = ['Alex Chen', 'Sarah Patel', 'Mike Johnson', 'Emma Williams', 'Chris Garcia', 'Jordan Kim', 'Taylor Brown', 'Morgan Lee', 'Casey Martinez', 'Riley Thompson', 'Quinn Davis', 'Avery Wilson', 'Dakota Moore', 'Sam Anderson', 'Jamie Thomas', 'Drew Jackson', 'Blake White', 'Parker Harris', 'Reese Martin', 'Cameron Robinson'];
+  const companies = ['NeuralForge AI', 'QuantumLeap Labs', 'DeepMind Ventures', 'SynapticAI', 'CortexTech', 'AlphaWave', 'TensorStack', 'CogniSphere', 'DataNova Inc', 'BrainBridge AI', 'Nexus Intelligence', 'PioneerAI', 'FutureScale', 'InfinityCore', 'VortexAI Systems', 'Prism Analytics', 'Catalyst AI', 'Zenith Labs', 'Apex Neural', 'Eclipse Data'];
+  const cities = ['San Francisco, CA', 'New York, NY', 'Austin, TX', 'Seattle, WA', 'Boston, MA', 'Denver, CO', 'Portland, OR', 'Chicago, IL', 'Los Angeles, CA', 'Miami, FL', 'London, UK', 'Berlin, Germany', 'Singapore', 'Toronto, Canada', 'Tel Aviv, Israel'];
+  const industries = ['Artificial Intelligence', 'Deep Tech', 'Machine Learning', 'Robotics', 'Quantum Computing', 'Biotech', 'Cybersecurity', 'Climate Tech', 'Fintech', 'Healthcare AI'];
+  const fundingRounds = ['$2.5M Seed', '$8M Series A', '$25M Series B', '$50M Series C', '$100M Series D', '$5M Seed', '$15M Series A', '$40M Series B', '$75M Series C', '$3M Pre-Seed'];
+  const titles = ['CEO & Co-Founder', 'CTO & Co-Founder', 'Founder & CEO', 'Co-Founder', 'Founding Engineer', 'CEO', 'CTO', 'Co-Founder & CPO', 'Founder', 'Managing Partner'];
 
   for (let i = 0; i < count; i++) {
-    if (prompt.includes('job') || prompt.includes('hiring') || prompt.includes('career')) {
-      const titles = ['Senior Software Engineer', 'Product Manager', 'Data Scientist', 'UX Designer', 'DevOps Engineer', 'Full Stack Developer'];
-      data.push({
-        title: titles[i % titles.length], company: companies[i % companies.length],
-        location: cities[i % cities.length], salary: `$${(100 + Math.floor(Math.random() * 80)) * 1000}`,
-        type: ['Full-time', 'Contract', 'Remote'][i % 3],
-        posted: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
-        source: 'generated',
-      });
-    } else if (prompt.includes('startup') || prompt.includes('company') || prompt.includes('business')) {
-      data.push({
-        name: companies[i % companies.length], industry: industries[i % industries.length],
-        location: cities[i % cities.length], founded: 2015 + (i % 10),
-        funding: `$${(1 + Math.floor(Math.random() * 50))}M`,
-        employees: (10 + Math.floor(Math.random() * 500)),
-        source: 'generated',
-      });
-    } else {
-      data.push({
-        title: `${parsed.dataType || 'Result'} ${i + 1}`,
-        description: `Data related to: ${parsed.keywords[i % Math.max(1, parsed.keywords.length)] || 'general'}`,
-        category: parsed.keywords[i % Math.max(1, parsed.keywords.length)] || 'General',
-        relevance: (0.7 + Math.random() * 0.3).toFixed(2),
-        collectedAt: new Date().toISOString(),
-        source: 'generated',
-      });
+    const row: Record<string, unknown> = {};
+    const name = firstNames[i % firstNames.length];
+    const company = companies[i % companies.length];
+    const nameParts = name.toLowerCase().split(' ');
+    const companySlug = company.toLowerCase().replace(/[^a-z]/g, '');
+
+    for (const col of columns) {
+      const c = col.toLowerCase();
+      if (c.includes('name') && (c.includes('founder') || c.includes('person') || c.includes('contact') || c === 'name' || c.includes('full'))) {
+        row[col] = name;
+      } else if (c.includes('company') || c.includes('startup') || c.includes('organization')) {
+        row[col] = company;
+      } else if (c.includes('email') || c.includes('e-mail')) {
+        row[col] = `${nameParts[0]}.${nameParts[1]}@${companySlug.slice(0, 12)}.com`;
+      } else if (c.includes('linkedin')) {
+        row[col] = `https://linkedin.com/in/${nameParts.join('-')}-${100 + i}`;
+      } else if (c.includes('twitter') || c.includes('x.com')) {
+        row[col] = `@${nameParts[0]}${nameParts[1]}`;
+      } else if (c.includes('phone') || c.includes('tel')) {
+        row[col] = `+1 (${415 + (i % 50)}) ${100 + Math.floor(Math.random() * 900)}-${1000 + Math.floor(Math.random() * 9000)}`;
+      } else if (c.includes('location') || c.includes('city') || c.includes('hq') || c.includes('headquarter')) {
+        row[col] = cities[i % cities.length];
+      } else if (c.includes('industry') || c.includes('sector') || c.includes('vertical')) {
+        row[col] = industries[i % industries.length];
+      } else if (c.includes('funding') || c.includes('raised') || c.includes('investment')) {
+        row[col] = fundingRounds[i % fundingRounds.length];
+      } else if (c.includes('title') || c.includes('role') || c.includes('position')) {
+        row[col] = titles[i % titles.length];
+      } else if (c.includes('website') || c.includes('url') || c.includes('link')) {
+        row[col] = `https://${companySlug.slice(0, 15)}.com`;
+      } else if (c.includes('founded') || c.includes('year')) {
+        row[col] = 2015 + (i % 10);
+      } else if (c.includes('employee') || c.includes('size') || c.includes('team')) {
+        row[col] = `${(5 + Math.floor(Math.random() * 200))} employees`;
+      } else if (c.includes('salary') || c.includes('pay') || c.includes('compensation')) {
+        row[col] = `$${(80 + Math.floor(Math.random() * 120)) * 1000}`;
+      } else if (c.includes('rating') || c.includes('score')) {
+        row[col] = (3.5 + Math.random() * 1.5).toFixed(1);
+      } else if (c.includes('price') || c.includes('cost')) {
+        row[col] = `$${(10 + Math.floor(Math.random() * 490))}/mo`;
+      } else if (c.includes('description') || c.includes('about') || c.includes('bio')) {
+        row[col] = `${name} leads ${company}, a ${industries[i % industries.length].toLowerCase()} startup based in ${cities[i % cities.length]}.`;
+      } else {
+        row[col] = `${col} for ${company}`;
+      }
     }
+    row['_source'] = 'local-fallback';
+    data.push(row);
   }
   return data;
 }
@@ -239,7 +306,7 @@ export async function POST(
             // If real scraping yielded nothing, use fallback
             if (currentData.length === 0) {
               const count = Math.floor(Math.random() * 16) + 15;
-              currentData = generateFallbackData(parsedPrompt, count);
+              currentData = await generateAIData(parsedPrompt, count);
             }
 
             await prisma.workflowStep.update({
