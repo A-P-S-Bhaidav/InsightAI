@@ -17,11 +17,64 @@ model User {
   apiKey    String?
   hasCompletedOnboarding Boolean @default(false)
   role      String @default("user")
+  organizationId String?
+  taskQuota      Int      @default(50)
+  tasksUsed      Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   tasks     Task[]
   accounts  Account[]
   sessions  Session[]
+  apiKeys   ApiKey[]
+  usageLogs UsageLog[]
+  organization Organization? @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  keyHash     String   @unique
+  keyPrefix   String
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean  @default(true)
+  permissions String   @default("read,write")
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([keyHash])
+}
+
+model UsageLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  endpoint  String
+  metadata  String   @default("{}")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  plan      String   @default("free")
+  maxMembers Int     @default(5)
+  maxTasks   Int     @default(100)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  members   User[]
+
+  @@index([slug])
 }
 
 model Task {
