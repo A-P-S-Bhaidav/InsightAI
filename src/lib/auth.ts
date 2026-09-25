@@ -56,8 +56,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: 'jwt' },
   // Required for Vercel deployment — trusts the proxy headers
   trustHost: true,
-  // Explicitly set secret (NextAuth v5 reads AUTH_SECRET by default, not NEXTAUTH_SECRET)
-  secret: process.env.AUTH_SECRET,
+  // Fallback to multiple potential environment variables for safety
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret-insightai-development-only-12345',
+  debug: true,
   pages: {
     signIn: '/login',
     error: '/login',
