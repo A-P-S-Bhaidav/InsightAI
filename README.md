@@ -256,7 +256,7 @@ docker-compose up -d
 | `DATABASE_URL` | ✅ | Database connection string |
 | `GEMINI_API_KEY` | ✅ | Google Gemini API key ([get one](https://aistudio.google.com/apikey)) |
 | `GROQ_API_KEY` | ✅ | Groq API key ([get one](https://console.groq.com/keys)) |
-| `NEXTAUTH_SECRET` | ✅ | Random secret (`openssl rand -base64 32`) |
+| `AUTH_SECRET` | ✅ | Random secret (`openssl rand -base64 32`) |
 | `NEXTAUTH_URL` | ✅ | App URL (e.g., `http://localhost:3000`) |
 | `GOOGLE_CLIENT_ID` | ➖ | Google OAuth client ID (for social login) |
 | `GOOGLE_CLIENT_SECRET` | ➖ | Google OAuth client secret |
