@@ -19,23 +19,29 @@ const providers: Provider[] = [
         return null;
       }
 
-      const user = await prisma.user.findUnique({
-        where: { email: credentials.email as string },
-      });
+      try {
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email as string },
+        });
 
-      if (!user || !user.password) {
+        if (!user || !user.password) {
+          return null;
+        }
+
+        const passwordsMatch = await bcrypt.compare(
+          credentials.password as string,
+          user.password
+        );
+
+        if (passwordsMatch) {
+          return user;
+        }
         return null;
+      } catch (error) {
+        console.error("Authentication Database Error:", error);
+        // Throw a specific error we can identify
+        throw new Error("Database connection failed. If on Vercel, ensure you are using Postgres, not SQLite.");
       }
-
-      const passwordsMatch = await bcrypt.compare(
-        credentials.password as string,
-        user.password
-      );
-
-      if (passwordsMatch) {
-        return user;
-      }
-      return null;
     },
   }),
 ];
