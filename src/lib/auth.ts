@@ -5,6 +5,7 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import prisma from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import type { Provider } from 'next-auth/providers';
+import { CredentialsSignin } from 'next-auth';
 
 // Build providers list dynamically — only add Google if credentials exist
 const providers: Provider[] = [
@@ -39,8 +40,9 @@ const providers: Provider[] = [
         return null;
       } catch (error) {
         console.error("Authentication Database Error:", error);
-        // Throw a specific error we can identify
-        throw new Error("Database connection failed. If on Vercel, ensure you are using Postgres, not SQLite.");
+        // Throw a specific error we can identify in the UI
+        class DatabaseError extends CredentialsSignin { code = "DatabaseError" };
+        throw new DatabaseError();
       }
     },
   }),
