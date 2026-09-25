@@ -4,6 +4,7 @@ import prisma from '@/lib/db';
 import { parsePrompt } from '@/lib/ai/prompt-parser';
 import { runAgenticRAG } from '@/lib/ai/agent';
 import { validateData } from '@/lib/ai/data-validator';
+import { sendTaskCompletedEmail, sendTaskFailedEmail } from '@/lib/email';
 
 export async function POST(
   request: NextRequest,
@@ -17,7 +18,10 @@ export async function POST(
     }
 
     const { id } = await params;
-    const task = await prisma.task.findUnique({ where: { id } });
+    const task = await prisma.task.findUnique({
+      where: { id },
+      include: { user: true },
+    });
 
     if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
@@ -202,6 +206,19 @@ export async function POST(
         },
       });
 
+      // Send email if user has an email address
+      if (task.user?.email) {
+        const taskUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/tasks/${id}`;
+        await sendTaskCompletedEmail(
+          task.user.email,
+          task.title,
+          dataset.name,
+          dataset.rowCount,
+          dataset.qualityScore,
+          taskUrl
+        );
+      }
+
       return NextResponse.json({
         success: true,
         task: updatedTask,
@@ -225,6 +242,12 @@ export async function POST(
         where: { id },
         data: { status: 'failed', errorMessage },
       });
+
+      if (task?.user?.email) {
+        const taskUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/tasks/${id}`;
+        await sendTaskFailedEmail(task.user.email, task.title, errorMessage, taskUrl);
+      }
+
       return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
   } catch (error: unknown) {
