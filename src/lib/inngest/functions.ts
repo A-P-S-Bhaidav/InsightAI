@@ -6,9 +6,8 @@ import { validateData } from "@/lib/ai/data-validator";
 import { sendTaskCompletedEmail, sendTaskFailedEmail } from "@/lib/email";
 
 export const runAgenticTask = inngest.createFunction(
-  { id: "run-agentic-task" },
-  { event: "task.execute" },
-  async ({ event, step }) => {
+  { id: "run-agentic-task", triggers: [{ event: "task.execute" }] },
+  async ({ event, step }: { event: any, step: any }) => {
     const { taskId } = event.data;
 
     // Fetch the task
