@@ -1,5 +1,5 @@
 'use client'
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { CheckCircle, XCircle, Info, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
@@ -20,6 +20,11 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const addToast = useCallback((message: string, type: ToastType) => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -45,7 +50,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ addToast, toast: addToast }}>
       {children}
-      {typeof window !== 'undefined' && createPortal(
+      {mounted && createPortal(
         <div style={{ position: 'fixed', bottom: '24px', right: '24px', display: 'flex', flexDirection: 'column', gap: '12px', zIndex: 9999 }}>
           {toasts.map(toast => (
             <div key={toast.id} className={`toast toast-${toast.type}`} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '8px', background: 'var(--color-surface-elevated, #1a1a2e)', border: '1px solid var(--color-border, #2a2a3e)', boxShadow: '0 10px 25px rgba(0,0,0,0.3)', minWidth: '320px', animation: 'slideInRight 0.3s ease' }}>
