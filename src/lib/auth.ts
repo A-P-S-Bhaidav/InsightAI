@@ -57,7 +57,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // Required for Vercel deployment — trusts the proxy headers
   trustHost: true,
   // Explicitly set secret (NextAuth v5 reads AUTH_SECRET by default, not NEXTAUTH_SECRET)
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+  secret: process.env.AUTH_SECRET,
   pages: {
     signIn: '/login',
     error: '/login',

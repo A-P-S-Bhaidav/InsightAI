@@ -40,7 +40,7 @@ jobs:
     needs: lint-and-typecheck
     env:
       DATABASE_URL: 'postgresql://test:test@localhost:5432/testdb'
-      NEXTAUTH_SECRET: 'ci-test-secret'
+      AUTH_SECRET: 'ci-test-secret'
       AUTH_SECRET: 'ci-test-secret'
       NEXTAUTH_URL: 'http://localhost:3000'
     steps:
