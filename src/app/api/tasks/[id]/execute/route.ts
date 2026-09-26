@@ -33,16 +33,24 @@ export async function POST(
       data: { status: 'running' },
     });
 
-    // Dispatch background job to Inngest
-    await inngest.send({
-      name: "task.execute",
-      data: { taskId: id },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: "Task dispatched to background queue successfully",
-    });
+    try {
+      // Dispatch background job to Inngest
+      await inngest.send({
+        name: "task.execute",
+        data: { taskId: id },
+      });
+      return NextResponse.json({
+        success: true,
+        message: "Task dispatched to background queue successfully",
+      });
+    } catch (dispatchError) {
+      // Revert status if dispatch fails (e.g. missing Inngest API key)
+      await prisma.task.update({
+        where: { id },
+        data: { status: 'failed', errorMessage: 'Failed to dispatch background worker. Check Inngest configuration.' },
+      });
+      throw dispatchError;
+    }
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to dispatch task';
