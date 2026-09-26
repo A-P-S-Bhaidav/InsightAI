@@ -37,7 +37,7 @@ interface ResearchPlan {
  * 3. RETRIEVES: Fetches and parses the most relevant pages
  * 4. EXTRACTS: Uses LLM to extract structured data from each page
  * 5. VALIDATES: Cross-references data, removes duplicates
- * 6. SYNTHESIZES: Fills gaps by doing targeted follow-up searches
+ * 6. SYNTHESIZES: If web data is insufficient, uses LLM knowledge as fallback
  */
 export async function runAgenticRAG(
   parsed: ParsedPrompt,
@@ -66,6 +66,8 @@ export async function runAgenticRAG(
   // ===== STEP 1: PLAN =====
   addStep({ type: 'plan', description: 'Creating research plan...', status: 'running', startedAt: new Date() });
   const plan = await createResearchPlan(parsed, columns);
+  console.log(`[Agent] Plan created: ${plan.searchQueries.length} queries, ${plan.targetSites.length} target sites`);
+  console.log(`[Agent] Queries: ${JSON.stringify(plan.searchQueries)}`);
   updateStep(0, {
     status: 'completed',
     result: `${plan.searchQueries.length} queries, ${plan.targetSites.length} target sites`,
@@ -76,11 +78,16 @@ export async function runAgenticRAG(
   addStep({ type: 'search', description: 'Searching the web...', status: 'running', startedAt: new Date() });
   const allSearchResults: SearchResult[] = [];
 
-  for (const query of plan.searchQueries.slice(0, 3)) {
-    const results = await webSearch(query, 6);
-    allSearchResults.push(...results);
-    totalSearches++;
-    await sleep(500); // Be polite
+  for (const query of plan.searchQueries.slice(0, 4)) {
+    try {
+      const results = await webSearch(query, 6);
+      allSearchResults.push(...results);
+      totalSearches++;
+      console.log(`[Agent] Query "${query}" returned ${results.length} results`);
+    } catch (error) {
+      console.error(`[Agent] Search failed for "${query}":`, error);
+    }
+    await sleep(300);
   }
 
   // Deduplicate URLs
@@ -100,6 +107,7 @@ export async function runAgenticRAG(
     return 0;
   });
 
+  console.log(`[Agent] Total unique URLs after dedup: ${sortedResults.length}`);
   updateStep(1, {
     status: 'completed',
     result: `Found ${sortedResults.length} unique results from ${totalSearches} searches`,
@@ -109,33 +117,43 @@ export async function runAgenticRAG(
   // ===== STEP 3: RETRIEVE + EXTRACT =====
   addStep({ type: 'retrieve', description: 'Fetching and extracting data from pages...', status: 'running', startedAt: new Date() });
 
-  const pagesToFetch = sortedResults.slice(0, 4); // Max 4 pages
+  const pagesToFetch = sortedResults.slice(0, 5);
   
-  for (const result of pagesToFetch) {
-    try {
-      const content = await fetchPageContent(result.url);
-      if (!content || content.text.length < 100) continue;
-      totalPages++;
+  // Fetch pages concurrently (2 at a time) for speed
+  for (let i = 0; i < pagesToFetch.length; i += 2) {
+    const batch = pagesToFetch.slice(i, i + 2);
+    const batchPromises = batch.map(async (result) => {
+      try {
+        const content = await fetchPageContent(result.url);
+        if (!content || content.text.length < 50) {
+          console.warn(`[Agent] Skipping ${result.url} — too little content (${content?.text.length || 0} chars)`);
+          return;
+        }
+        totalPages++;
 
-      // Use LLM to extract structured data
-      const extracted = await extractStructuredData(
-        content.text,
-        columns,
-        parsed.description,
-        result.url
-      );
+        // Use LLM to extract structured data
+        const extracted = await extractStructuredData(
+          content.text,
+          columns,
+          parsed.description,
+          result.url
+        );
 
-      if (extracted.length > 0) {
-        allData.push(...extracted);
-        sourcesUsed.push(result.url);
+        console.log(`[Agent] Extracted ${extracted.length} records from ${result.url}`);
+
+        if (extracted.length > 0) {
+          allData.push(...extracted);
+          sourcesUsed.push(result.url);
+        }
+      } catch (error) {
+        console.error(`[Agent] Failed to process ${result.url}:`, error);
       }
+    });
 
-      await sleep(1000); // Rate limit
-    } catch (error) {
-      console.error(`[Agent] Failed to process ${result.url}:`, error);
-    }
+    await Promise.all(batchPromises);
   }
 
+  console.log(`[Agent] Total extracted records after scraping: ${allData.length}`);
   updateStep(2, {
     status: 'completed',
     result: `Extracted ${allData.length} records from ${totalPages} pages`,
@@ -144,64 +162,43 @@ export async function runAgenticRAG(
 
   // ===== STEP 4: VALIDATE + DEDUPLICATE =====
   addStep({ type: 'validate', description: 'Validating and deduplicating...', status: 'running', startedAt: new Date() });
-  const mergedData = mergeRecords(allData, columns);
+  let mergedData = mergeRecords(allData, columns);
+  console.log(`[Agent] After dedup: ${mergedData.length} records (removed ${allData.length - mergedData.length} duplicates)`);
   updateStep(3, {
     status: 'completed',
     result: `${mergedData.length} unique records (removed ${allData.length - mergedData.length} duplicates)`,
     completedAt: new Date(),
   });
 
-  // ===== STEP 5: SYNTHESIZE (fill gaps if needed) =====
-  if (mergedData.length < 5 && parsed.targetCount !== 0) {
-    addStep({ type: 'synthesize', description: 'Running follow-up searches to fill gaps...', status: 'running', startedAt: new Date() });
+  // ===== STEP 5: SYNTHESIZE / LLM KNOWLEDGE FALLBACK =====
+  // If web scraping returned too few results, use Gemini's own knowledge
+  if (mergedData.length < 5) {
+    addStep({ type: 'synthesize', description: 'Augmenting with AI knowledge...', status: 'running', startedAt: new Date() });
+    console.log(`[Agent] Only ${mergedData.length} records from web. Running LLM knowledge fallback...`);
 
-    // Create more specific follow-up queries
-    const followUpQueries = await generateFollowUpQueries(parsed, mergedData.length);
-    
-    for (const query of followUpQueries.slice(0, 3)) {
-      const results = await webSearch(query, 5);
-      totalSearches++;
+    try {
+      const llmData = await generateDataFromLLMKnowledge(parsed, columns, mergedData);
+      console.log(`[Agent] LLM knowledge fallback returned ${llmData.length} records`);
 
-      for (const r of results.slice(0, 3)) {
-        if (sourcesUsed.includes(r.url)) continue;
-        try {
-          const content = await fetchPageContent(r.url);
-          if (!content || content.text.length < 100) continue;
-          totalPages++;
-
-          const extracted = await extractStructuredData(
-            content.text, columns, parsed.description, r.url
-          );
-          if (extracted.length > 0) {
-            allData.push(...extracted);
-            sourcesUsed.push(r.url);
-          }
-          await sleep(1000);
-        } catch { /* skip */ }
+      if (llmData.length > 0) {
+        // Merge LLM data with web data, web data takes priority
+        const combined = [...mergedData, ...llmData];
+        mergedData = mergeRecords(combined, columns);
+        sourcesUsed.push('AI Knowledge Base');
       }
+    } catch (error) {
+      console.error('[Agent] LLM knowledge fallback failed:', error);
     }
 
-    const finalMerged = mergeRecords([...mergedData, ...allData], columns);
-    updateStep(4, {
+    updateStep(steps.length - 1, {
       status: 'completed',
-      result: `Final: ${finalMerged.length} records after follow-up`,
+      result: `Final: ${mergedData.length} records after AI augmentation`,
       completedAt: new Date(),
     });
-
-    // Compute quality
-    const quality = computeQuality(finalMerged, columns);
-
-    return {
-      data: finalMerged,
-      steps,
-      sourcesUsed,
-      totalSearches,
-      totalPagesScraped: totalPages,
-      quality,
-    };
   }
 
   const quality = computeQuality(mergedData, columns);
+  console.log(`[Agent] Final result: ${mergedData.length} records, quality: ${quality}`);
 
   return {
     data: mergedData,
@@ -211,6 +208,70 @@ export async function runAgenticRAG(
     totalPagesScraped: totalPages,
     quality,
   };
+}
+
+/**
+ * Use LLM's training knowledge to generate data when web scraping fails.
+ * This is a fallback — clearly marked as "AI Knowledge" source.
+ */
+async function generateDataFromLLMKnowledge(
+  parsed: ParsedPrompt,
+  columns: string[],
+  existingData: Record<string, string>[]
+): Promise<Record<string, string>[]> {
+  const existingNames = existingData
+    .map(r => r[columns[0]] || '')
+    .filter(n => n.length > 0);
+
+  const excludeClause = existingNames.length > 0
+    ? `\nDo NOT include these (already collected): ${existingNames.join(', ')}`
+    : '';
+
+  const prompt = `You are a knowledgeable data research assistant. Based on your training knowledge, provide real, factual data matching this request.
+
+TASK: ${parsed.description}
+DATA TYPE: ${parsed.dataType}
+REQUIRED COLUMNS: ${JSON.stringify(columns)}
+${excludeClause}
+
+INSTRUCTIONS:
+1. Provide 10-20 REAL, FACTUAL records based on your knowledge
+2. Each record must have values for ALL columns: ${JSON.stringify(columns)}
+3. Only include information you are confident is accurate
+4. Return ONLY a valid JSON array — no markdown, no backticks, no explanation
+5. Every value must be a string
+
+Example format:
+[{"${columns[0]}": "Example Value", "${columns.length > 1 ? columns[1] : 'Description'}": "Example"}]`;
+
+  const response = await generateAIContent(
+    'You are a factual data provider. Return ONLY a valid JSON array of real data. No markdown. No backticks.',
+    prompt
+  );
+
+  // Clean and parse
+  let cleaned = response
+    .replace(/```json\n?/g, '')
+    .replace(/\n?```/g, '')
+    .trim();
+
+  if (!cleaned.startsWith('[')) {
+    const match = cleaned.match(/\[[\s\S]*\]/);
+    if (match) cleaned = match[0];
+    else return [];
+  }
+
+  const data = JSON.parse(cleaned);
+  if (!Array.isArray(data)) return [];
+
+  return data.map(row => {
+    const record: Record<string, string> = {};
+    for (const col of columns) {
+      record[col] = String(row[col] ?? row[col.toLowerCase()] ?? '');
+    }
+    record['_source'] = 'AI Knowledge Base';
+    return record;
+  }).filter(row => columns.some(col => row[col] && row[col].length > 0));
 }
 
 /**
@@ -234,17 +295,21 @@ Return a JSON object (no markdown, no backticks):
 }
 
 Make search queries SPECIFIC and VARIED. Include:
-- Direct queries: "deep tech startup founders email"
-- Site-specific: "site:crunchbase.com deep tech startups 2024"
-- List queries: "list of deep tech companies founders"
-- Data-specific: "deep tech startup CEO linkedin profile"`;
+- Direct queries: "list of deep tech startup founders 2024"
+- Site-specific: "site:crunchbase.com deep tech startups"
+- List queries: "top AI companies founders CEO name email"
+- Data-specific: "deep tech startup CEO founder database"`;
 
     const response = await generateAIContent(
       'You create web research plans. Return ONLY valid JSON. No markdown.',
       prompt
     );
 
-    const cleaned = response.replace(/```json\n?|\n?```/g, '').trim();
+    let cleaned = response.replace(/```json\n?|\n?```/g, '').trim();
+    if (!cleaned.startsWith('{')) {
+      const match = cleaned.match(/\{[\s\S]*\}/);
+      if (match) cleaned = match[0];
+    }
     return JSON.parse(cleaned) as ResearchPlan;
   } catch (error) {
     console.error('[Agent] Plan creation failed, using fallback:', error);
@@ -255,39 +320,13 @@ Make search queries SPECIFIC and VARIED. Include:
         baseQuery,
         `${baseQuery} list data`,
         `${baseQuery} directory`,
-        `site:crunchbase.com ${baseQuery}`,
         `${parsed.dataType} database ${parsed.keywords[0] || ''}`,
+        `list of ${parsed.dataType} 2024`,
       ],
       targetSites: ['crunchbase.com', 'linkedin.com', 'techcrunch.com', 'wikipedia.org'],
       extractionStrategy: 'Extract structured data from search results and linked pages',
       expectedColumns: columns,
     };
-  }
-}
-
-/**
- * Generate follow-up queries when initial results are insufficient
- */
-async function generateFollowUpQueries(parsed: ParsedPrompt, currentCount: number): Promise<string[]> {
-  try {
-    const prompt = `I'm collecting ${parsed.dataType} data but only found ${currentCount} records so far.
-Original task: ${parsed.description}
-
-Generate 3 DIFFERENT search queries that might find MORE results. Be creative — try different angles, synonyms, or related terms.
-Return ONLY a JSON array of strings. No markdown.`;
-
-    const response = await generateAIContent(
-      'Return ONLY a JSON array of search query strings. No markdown.',
-      prompt
-    );
-    const cleaned = response.replace(/```json\n?|\n?```/g, '').trim();
-    return JSON.parse(cleaned);
-  } catch {
-    return [
-      `${parsed.dataType} list directory`,
-      `top ${parsed.keywords[0] || parsed.dataType} 2024`,
-      `${parsed.description.slice(0, 40)} database`,
-    ];
   }
 }
 
