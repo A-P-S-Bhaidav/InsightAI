@@ -76,7 +76,7 @@ export async function runAgenticRAG(
   addStep({ type: 'search', description: 'Searching the web...', status: 'running', startedAt: new Date() });
   const allSearchResults: SearchResult[] = [];
 
-  for (const query of plan.searchQueries.slice(0, 5)) {
+  for (const query of plan.searchQueries.slice(0, 3)) {
     const results = await webSearch(query, 6);
     allSearchResults.push(...results);
     totalSearches++;
@@ -109,7 +109,7 @@ export async function runAgenticRAG(
   // ===== STEP 3: RETRIEVE + EXTRACT =====
   addStep({ type: 'retrieve', description: 'Fetching and extracting data from pages...', status: 'running', startedAt: new Date() });
 
-  const pagesToFetch = sortedResults.slice(0, 8); // Max 8 pages
+  const pagesToFetch = sortedResults.slice(0, 4); // Max 4 pages
   
   for (const result of pagesToFetch) {
     try {
