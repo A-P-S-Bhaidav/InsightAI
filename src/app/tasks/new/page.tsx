@@ -89,8 +89,8 @@ export default function NewTaskPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20 }}>
-        {/* Left — Form */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+        {/* Form */}
         <form onSubmit={handleSubmit} style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div>
             <label style={labelStyle}>Task Title *</label>
@@ -192,12 +192,13 @@ export default function NewTaskPage() {
           </button>
         </form>
 
-        {/* Right — Examples */}
+        {/* Quick Templates */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: 13 }}>
-            <Lightbulb size={14} /> Quick Templates
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-primary)', fontSize: 15, fontWeight: 600 }}>
+            <Lightbulb size={16} /> Quick Templates
           </div>
-          {EXAMPLE_PROMPTS.map((ex, i) => (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
+            {EXAMPLE_PROMPTS.map((ex, i) => (
             <button
               key={i}
               type="button"
@@ -222,6 +223,7 @@ export default function NewTaskPage() {
               </div>
             </button>
           ))}
+          </div>
         </div>
       </div>
     </div>
