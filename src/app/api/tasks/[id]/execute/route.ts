@@ -162,6 +162,16 @@ export async function POST(
       await updateStep('scrape', 'running');
       const plan = config.plan;
       const queryIndex = body.queryIndex || 0;
+      const resultIndex = body.resultIndex || 0;
+      
+      // Early exit if target count is reached
+      if (parsedPrompt.targetCount) {
+        const currentCount = await prisma.dataPoint.count({ where: { datasetId: dataset.id } });
+        if (currentCount >= parsedPrompt.targetCount) {
+          await updateStep('scrape', 'completed');
+          return NextResponse.json({ nextAction: 'finalize', message: `Target count of ${parsedPrompt.targetCount} reached. Finalizing...` });
+        }
+      }
       
       if (!plan || !plan.searchQueries || queryIndex >= plan.searchQueries.length) {
         await updateStep('scrape', 'completed');
@@ -179,8 +189,10 @@ export async function POST(
       let pagesProcessed = 0;
       const MAX_PAGES_PER_RUN = isVeryHighVolume ? 2 : 4; // Only keep it low to prevent timeouts on very high volume requests
 
-      for (const result of results.slice(0, scrapeDepth)) {
+      let i = resultIndex;
+      for (; i < Math.min(results.length, scrapeDepth); i++) {
         if (pagesProcessed >= MAX_PAGES_PER_RUN) break;
+        const result = results[i];
 
         try {
           const content = await fetchPageContent(result.url);
@@ -233,10 +245,22 @@ export async function POST(
           console.error(`Failed to process ${result.url}:`, e);
         }
       }
+      
+      // If we haven't finished all results for this query, resume from next index
+      if (i < Math.min(results.length, scrapeDepth)) {
+        return NextResponse.json({ 
+          nextAction: 'search', 
+          queryIndex: queryIndex, 
+          resultIndex: i,
+          message: `Processing more results for "${query}"`,
+          currentQuery: query
+        });
+      }
 
       return NextResponse.json({ 
         nextAction: 'search', 
         queryIndex: queryIndex + 1, 
+        resultIndex: 0,
         message: `Searched for "${query}"`,
         currentQuery: query
       });

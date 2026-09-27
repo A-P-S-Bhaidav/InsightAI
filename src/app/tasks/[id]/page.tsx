@@ -85,7 +85,7 @@ export default function TaskDetailPage() {
 
         if (data.nextAction) {
           currentAction = data.nextAction;
-          currentPayload = { queryIndex: data.queryIndex, baselineIndex: data.baselineIndex };
+          currentPayload = { queryIndex: data.queryIndex, baselineIndex: data.baselineIndex, resultIndex: data.resultIndex };
           
           if (data.nextAction === 'search') {
             setEstimatedTime(prev => (prev || 0) + 15); // Add time for each search
