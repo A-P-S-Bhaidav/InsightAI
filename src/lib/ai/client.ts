@@ -38,7 +38,20 @@ async function callProvider(provider: AIProvider, systemPrompt: string, userProm
       const key = process.env.GROQ_API_KEY;
       if (!key) throw new Error('GROQ_API_KEY missing');
       const groq = new Groq({ apiKey: key });
-      const models = ['llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768'];
+      let models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-8b-8192'];
+      try {
+        const availableModels = await groq.models.list();
+        const availableIds = availableModels.data.map((m: any) => m.id);
+        const validModels = models.filter(m => availableIds.includes(m));
+        if (validModels.length > 0) {
+          models = validModels;
+        } else if (availableIds.length > 0) {
+          // If standard models are restricted, try whatever models are available (filtering out known audio models)
+          models = availableIds.filter((id: string) => !id.includes('whisper'));
+        }
+      } catch (e) {
+        console.warn('[AI Client] Failed to list Groq models:', e);
+      }
       let lastGroqError: any = null;
       for (const modelName of models) {
         try {
