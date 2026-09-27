@@ -17,28 +17,22 @@ export async function generateAIContent(systemPrompt: string, userPrompt: string
 
   if (geminiKey) {
     const genAI = new GoogleGenerativeAI(geminiKey);
-    const geminiModels = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.5-flash'];
-
-    for (const modelName of geminiModels) {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          const result = await model.generateContent([systemPrompt, userPrompt]);
-          console.log(`[AI Client] Used provider: Gemini (${modelName})`);
-          return result.response.text();
-        } catch (error: any) {
-          geminiError = error;
-          if (error?.status === 429) {
-            console.warn(`[AI Client] Gemini rate limited. Attempt ${attempt}`);
-            await sleep(1000 * Math.pow(2, attempt - 1));
-          } else if (error?.status === 404 || error?.status === 503 || error?.status === 400) {
-            console.warn(`[AI Client] Gemini model ${modelName} failed with ${error.status}, trying next model...`);
-            break; // Move to next model
-          } else {
-            console.error(`[AI Client] Gemini error on attempt ${attempt}:`, error);
-            if (attempt < 2) await sleep(1000);
-          }
+    // Use the explicit requested model that is available
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
+    
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      try {
+        const result = await model.generateContent([systemPrompt, userPrompt]);
+        console.log(`[AI Client] Used provider: Gemini (gemini-3.8-flash) on attempt ${attempt}`);
+        return result.response.text();
+      } catch (error: any) {
+        geminiError = error;
+        if (error?.status === 429 || error?.status === 503) {
+          console.warn(`[AI Client] Gemini 503/429 (High Demand). Attempt ${attempt}/5`);
+          if (attempt < 5) await sleep(2000 * Math.pow(2, attempt - 1)); // Exponential backoff: 2s, 4s, 8s, 16s
+        } else {
+          console.error(`[AI Client] Gemini error on attempt ${attempt}:`, error);
+          if (attempt < 5) await sleep(1000);
         }
       }
     }
@@ -50,7 +44,9 @@ export async function generateAIContent(systemPrompt: string, userPrompt: string
   if (groqKey) {
     console.log('[AI Client] Falling back to Groq...');
     const groq = new Groq({ apiKey: groqKey });
-    const groqModels = ['llama-3.1-70b-versatile', 'llama-3.1-8b-instant', 'llama3-8b-8192'];
+    
+    // In case we want to try groq
+    const groqModels = ['llama3-70b-8192', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant'];
 
     for (const modelName of groqModels) {
       for (let attempt = 1; attempt <= 2; attempt++) {
@@ -67,8 +63,8 @@ export async function generateAIContent(systemPrompt: string, userPrompt: string
           console.log(`[AI Client] Used provider: Groq (${modelName})`);
           return completion.choices[0]?.message?.content || '';
         } catch (error: any) {
-          if (error?.status === 429) {
-            console.warn(`[AI Client] Groq rate limited. Attempt ${attempt}`);
+          if (error?.status === 429 || error?.status === 503) {
+            console.warn(`[AI Client] Groq overloaded. Attempt ${attempt}`);
             await sleep(1000 * Math.pow(2, attempt - 1));
           } else if (error?.status === 404 || error?.status === 400) {
             console.warn(`[AI Client] Groq model ${modelName} unavailable, trying next...`);
