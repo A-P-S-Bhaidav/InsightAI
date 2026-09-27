@@ -17,10 +17,12 @@ export async function generateAIContent(systemPrompt: string, userPrompt: string
 
   if (geminiKey) {
     const genAI = new GoogleGenerativeAI(geminiKey);
-    // Use the explicit requested model that is available
     const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
     
-    for (let attempt = 1; attempt <= 5; attempt++) {
+    // If Groq is available, only try Gemini twice quickly before falling back
+    const maxAttempts = groqKey ? 2 : 5;
+    
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const result = await model.generateContent([systemPrompt, userPrompt]);
         console.log(`[AI Client] Used provider: Gemini (gemini-3.8-flash) on attempt ${attempt}`);
@@ -28,13 +30,19 @@ export async function generateAIContent(systemPrompt: string, userPrompt: string
       } catch (error: any) {
         geminiError = error;
         if (error?.status === 429 || error?.status === 503) {
-          console.warn(`[AI Client] Gemini 503/429 (High Demand). Attempt ${attempt}/5`);
-          if (attempt < 5) await sleep(2000 * Math.pow(2, attempt - 1)); // Exponential backoff: 2s, 4s, 8s, 16s
+          console.warn(`[AI Client] Gemini 503/429 (High Demand). Attempt ${attempt}/${maxAttempts}`);
+          if (attempt < maxAttempts) {
+            await sleep(1000 * attempt); // Fast backoff: 1s, 2s...
+          }
         } else {
           console.error(`[AI Client] Gemini error on attempt ${attempt}:`, error);
-          if (attempt < 5) await sleep(1000);
+          if (attempt < maxAttempts) await sleep(1000);
         }
       }
+    }
+    
+    if (groqKey) {
+      console.warn(`[AI Client] Gemini exhausted ${maxAttempts} attempts. Seamlessly falling back to Groq...`);
     }
   } else {
     console.warn('[AI Client] GEMINI_API_KEY missing, skipping Gemini.');
