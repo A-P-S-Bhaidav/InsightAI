@@ -48,9 +48,9 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
       {/* Welcome row — no duplicate title */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>Here&apos;s what&apos;s happening with your data.</p>
         <Link href="/tasks/new" style={{ textDecoration: 'none' }}>
           <button style={{
@@ -64,7 +64,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats grid — full width, 4 equal columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, flexShrink: 0 }}>
         {stats.map((s, i) => (
           <div key={i} style={cardStyle}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
@@ -83,9 +83,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Two columns — Recent Tasks + Quick Actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, flex: 1 }}>
         {/* Recent Tasks */}
-        <div style={cardStyle}>
+        <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Recent Tasks</h2>
             <Link href="/tasks" style={{ fontSize: 12, color: 'var(--color-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -94,9 +94,9 @@ export default function DashboardPage() {
           </div>
 
           {loading ? (
-            <div style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center', fontSize: 13 }}>Loading...</div>
+            <div style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center', fontSize: 13, flex: 1 }}>Loading...</div>
           ) : data?.recentTasks?.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
               {data.recentTasks.slice(0, 5).map((task: any, i: number) => (
                 <Link key={i} href={`/tasks/${task.id}`} style={{ textDecoration: 'none' }}>
                   <div style={{
@@ -115,16 +115,16 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : (
-            <div style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center', fontSize: 13 }}>
+            <div style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center', fontSize: 13, flex: 1 }}>
               No tasks yet. Create your first task to get started.
             </div>
           )}
         </div>
 
         {/* Quick Actions */}
-        <div style={cardStyle}>
+        <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px 0' }}>Quick Actions</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
             {[
               { label: 'Create New Task', href: '/tasks/new', primary: true },
               { label: 'View Datasets', href: '/datasets', primary: false },

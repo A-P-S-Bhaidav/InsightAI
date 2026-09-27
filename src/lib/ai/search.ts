@@ -341,3 +341,35 @@ export async function fetchPageContent(url: string): Promise<{ text: string; htm
     return null;
   }
 }
+
+/**
+ * Extract internal links from a page's HTML to enable deep crawling
+ */
+export function extractInternalLinks(html: string, baseUrl: string, maxLinks: number = 10): string[] {
+  const links: string[] = [];
+  try {
+    const $ = cheerio.load(html);
+    const baseDomain = new URL(baseUrl).hostname;
+    
+    $('a').each((_, el) => {
+      if (links.length >= maxLinks) return false;
+      const href = $(el).attr('href');
+      if (!href || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+      
+      try {
+        const absoluteUrl = new URL(href, baseUrl).href;
+        const linkDomain = new URL(absoluteUrl).hostname;
+        
+        // Only keep links to the same domain (internal crawling)
+        if (linkDomain === baseDomain || linkDomain.endsWith(`.${baseDomain}`)) {
+          if (!links.includes(absoluteUrl) && absoluteUrl !== baseUrl) {
+            links.push(absoluteUrl);
+          }
+        }
+      } catch { /* Ignore invalid URLs */ }
+    });
+  } catch (error) {
+    console.error('[WebSearch] Failed to extract links:', error);
+  }
+  return links;
+}

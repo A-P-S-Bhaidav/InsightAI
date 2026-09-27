@@ -201,16 +201,16 @@ export default function SettingsPage() {
           <div style={cardStyle}>
             <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px 0' }}>AI Providers</h3>
             {[
-              { name: 'Gemini API Key', env: 'GEMINI_API_KEY' },
-              { name: 'Groq API Key', env: 'GROQ_API_KEY' },
+              { name: 'Google Gemini', env: 'Configured via Environment' },
+              { name: 'Groq', env: 'Configured via Environment' },
             ].map(k => (
               <div key={k.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border-light)' }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{k.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>env: {k.env}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{k.env}</div>
                 </div>
                 <span style={{ padding: '4px 10px', borderRadius: 12, fontSize: 11, color: '#10b981', background: 'rgba(16,185,129,0.12)' }}>
-                  Configured ✓
+                  Active ✓
                 </span>
               </div>
             ))}

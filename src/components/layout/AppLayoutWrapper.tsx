@@ -25,7 +25,7 @@ export default function AppLayoutWrapper({ children }: { children: React.ReactNo
         <Sidebar />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <Header />
-          <main style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
+          <main style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column' }}>
             {children}
           </main>
         </div>

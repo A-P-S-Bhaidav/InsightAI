@@ -3,7 +3,7 @@ import { rateLimit } from '@/lib/security';
 import prisma from '@/lib/db';
 import { parsePrompt } from '@/lib/ai/prompt-parser';
 import { generateDataFromLLMKnowledge, createResearchPlan } from '@/lib/ai/agent';
-import { webSearch, fetchPageContent } from '@/lib/ai/search';
+import { webSearch, fetchPageContent, extractInternalLinks } from '@/lib/ai/search';
 import { extractStructuredData, mergeRecords } from '@/lib/ai/extractor';
 import { validateData } from '@/lib/ai/data-validator';
 
@@ -163,7 +163,12 @@ export async function POST(
       const isHighVolume = (parsedPrompt.targetCount && parsedPrompt.targetCount > 50) || task.priority === 'high';
       const scrapeDepth = isHighVolume ? 6 : 2; // Scrape up to 6 pages per query for high volume
 
+      let pagesProcessed = 0;
+      const MAX_PAGES_PER_RUN = 6;
+
       for (const result of results.slice(0, scrapeDepth)) {
+        if (pagesProcessed >= MAX_PAGES_PER_RUN) break;
+
         try {
           const content = await fetchPageContent(result.url);
           if (!content || content.text.length < 50) continue;
@@ -182,6 +187,35 @@ export async function POST(
             await prisma.dataPoint.create({
               data: { datasetId: dataset.id, data: JSON.stringify(record), confidence: 0.8, sourceId: source.id }
             });
+          }
+          pagesProcessed++;
+
+          // Deep crawling for high volume
+          if (isHighVolume) {
+            const internalLinks = extractInternalLinks(content.html, result.url, 2);
+            for (const link of internalLinks) {
+              if (pagesProcessed >= MAX_PAGES_PER_RUN) break;
+              
+              const subContent = await fetchPageContent(link);
+              if (!subContent || subContent.text.length < 50) continue;
+
+              let subSource = await prisma.source.findFirst({ where: { url: link } });
+              if (!subSource) {
+                const subDomain = new URL(link).hostname;
+                subSource = await prisma.source.create({
+                  data: { url: link, domain: subDomain, title: subDomain, statusCode: 200 }
+                });
+              }
+
+              const subExtracted = await extractStructuredData(subContent.text, columns, parsedPrompt.description, link);
+              
+              for (const record of subExtracted) {
+                await prisma.dataPoint.create({
+                  data: { datasetId: dataset.id, data: JSON.stringify(record), confidence: 0.85, sourceId: subSource.id }
+                });
+              }
+              pagesProcessed++;
+            }
           }
         } catch (e) {
           console.error(`Failed to process ${result.url}:`, e);

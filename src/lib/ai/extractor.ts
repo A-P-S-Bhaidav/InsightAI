@@ -105,9 +105,8 @@ export function mergeRecords(
   const merged: Record<string, string>[] = [];
 
   for (const record of allRecords) {
-    // Create a dedup key from the first 2-3 non-empty columns
+    // Create a dedup key from ALL non-empty columns to prevent collisions
     const keyParts = columns
-      .slice(0, 3)
       .map(col => (record[col] || '').toLowerCase().trim())
       .filter(v => v.length > 0);
     
