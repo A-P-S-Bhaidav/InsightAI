@@ -279,9 +279,11 @@ DATA TYPE: ${parsed.dataType}
 COLUMNS NEEDED: ${JSON.stringify(columns)}
 KEYWORDS: ${JSON.stringify(parsed.keywords)}
 
+CRITICAL: The search queries MUST be extremely short, concise, and optimized for search engines (e.g. use quotes and boolean operators like: "AI Engineer" AND "Gurugram" jobs 2026). Do NOT use long conversational sentences as search queries.
+
 Return a JSON object (no markdown, no backticks):
 {
-  "searchQueries": ["${queryCount} specific web search queries"],
+  "searchQueries": ["${queryCount} short, optimized boolean search queries"],
   "targetSites": ["domains likely to have this data"],
   "extractionStrategy": "brief description",
   "expectedColumns": ${JSON.stringify(columns)}

@@ -164,13 +164,15 @@ async function searchViaDDGHtml(query: string, maxResults: number): Promise<Sear
   const results: SearchResult[] = [];
 
   try {
-    const encodedQuery = encodeURIComponent(query);
-    const response = await fetch(`https://html.duckduckgo.com/html/?q=${encodedQuery}`, {
+    const response = await fetch(`https://html.duckduckgo.com/html/`, {
+      method: 'POST',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml',
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Accept-Language': 'en-US,en;q=0.9',
       },
+      body: `q=${encodeURIComponent(query)}`,
       signal: AbortSignal.timeout(10000),
     });
 
@@ -246,6 +248,13 @@ function generateSyntheticResults(query: string): SearchResult[] {
  * Fetch and extract text content from a URL
  * Uses plain fetch (fast, works on Vercel) with Browserless as optional enhancement
  */
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+];
+
 export async function fetchPageContent(url: string): Promise<{ text: string; html: string; title: string } | null> {
   console.log(`[WebSearch] Fetching: ${url}`);
 
@@ -254,9 +263,10 @@ export async function fetchPageContent(url: string): Promise<{ text: string; htm
 
     // Try plain fetch first — it's fastest and works on most pages
     try {
+      const randomUA = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'User-Agent': randomUA,
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.9',
         },

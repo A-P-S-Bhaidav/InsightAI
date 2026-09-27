@@ -161,10 +161,10 @@ export async function POST(
       
       // Determine scraping depth based on volume requested
       const isHighVolume = (parsedPrompt.targetCount && parsedPrompt.targetCount > 50) || task.priority === 'high';
-      const scrapeDepth = isHighVolume ? 6 : 2; // Scrape up to 6 pages per query for high volume
+      const scrapeDepth = isHighVolume ? 8 : 5; // Scrape up to 8 pages per query
 
       let pagesProcessed = 0;
-      const MAX_PAGES_PER_RUN = 3; // Reduced from 6 to 3 to aggressively prevent Vercel 60s timeouts
+      const MAX_PAGES_PER_RUN = 4; // Balance between yielding data and preventing Vercel timeouts
 
       for (const result of results.slice(0, scrapeDepth)) {
         if (pagesProcessed >= MAX_PAGES_PER_RUN) break;
