@@ -65,7 +65,13 @@ export default function TaskDetailPage() {
           body: JSON.stringify({ action: currentAction, ...currentPayload }),
         });
         
-        const data = await res.json();
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          throw new Error(text.includes('error occurred') ? 'Server timed out. Reduce request complexity or volume.' : 'Invalid server response: ' + text.slice(0, 50));
+        }
         
         if (!res.ok) {
           throw new Error(data.error || 'Execution failed');

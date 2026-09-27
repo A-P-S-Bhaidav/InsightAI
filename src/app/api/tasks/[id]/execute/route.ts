@@ -134,7 +134,7 @@ export async function POST(
       
       const totalGenerated = existingData.length + llmData.length;
       
-      if (baselineIndex + 1 < targetLoops && totalGenerated < targetCount) {
+      if (llmData.length > 0 && baselineIndex + 1 < targetLoops && totalGenerated < targetCount) {
         return NextResponse.json({ 
           nextAction: 'baseline', 
           baselineIndex: baselineIndex + 1, 
@@ -164,7 +164,7 @@ export async function POST(
       const scrapeDepth = isHighVolume ? 6 : 2; // Scrape up to 6 pages per query for high volume
 
       let pagesProcessed = 0;
-      const MAX_PAGES_PER_RUN = 6;
+      const MAX_PAGES_PER_RUN = 3; // Reduced from 6 to 3 to aggressively prevent Vercel 60s timeouts
 
       for (const result of results.slice(0, scrapeDepth)) {
         if (pagesProcessed >= MAX_PAGES_PER_RUN) break;
