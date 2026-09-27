@@ -58,6 +58,13 @@ export default function DashboardPage() {
     { icon: <TrendingUp size={18} />, title: 'Avg Quality', value: data?.averageQualityScore ? `${Math.round(data.averageQualityScore)}%` : '0%', color: '#f59e0b' },
   ];
 
+  const chartData = data?.tasksOverTime?.length 
+    ? data.tasksOverTime.map((d: any) => ({
+        name: new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' }),
+        tasks: d.count
+      }))
+    : mockActivityData;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
       {/* Welcome row — no duplicate title */}
@@ -159,10 +166,10 @@ export default function DashboardPage() {
       
       {/* Activity Graph Section */}
       <div style={{ ...cardStyle, flexShrink: 0, marginTop: 16 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px 0' }}>Activity Overview</h2>
+        <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px 0' }}>Activity Overview (Last 7 Days)</h2>
         <div style={{ width: '100%', height: 250 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={mockActivityData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorTasks" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3}/>
