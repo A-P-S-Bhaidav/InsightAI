@@ -53,7 +53,7 @@ export default function WorkflowsPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, minHeight: '100%' }}>
       {workflows.map((wf: any) => (
         <div key={wf.id} style={cardStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>

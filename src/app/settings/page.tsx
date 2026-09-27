@@ -86,7 +86,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: '100%' }}>
       {/* Tabs */}
       <div style={{
         display: 'grid', gridTemplateColumns: `repeat(${TABS.length}, 1fr)`,

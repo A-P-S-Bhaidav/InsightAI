@@ -48,44 +48,118 @@ export async function generateAIContent(systemPrompt: string, userPrompt: string
     console.warn('[AI Client] GEMINI_API_KEY missing, skipping Gemini.');
   }
 
-  // Fallback to Groq
+  // Fallback 1: Groq
   if (groqKey) {
     console.log('[AI Client] Falling back to Groq...');
     const groq = new Groq({ apiKey: groqKey });
     
-    // In case we want to try groq
-    const groqModels = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b'];
+    // We try multiple models
+    const groqModels = ['llama3-70b-8192', 'mixtral-8x7b-32768'];
 
     for (const modelName of groqModels) {
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          const completion = await groq.chat.completions.create({
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userPrompt }
-            ],
-            model: modelName,
-            temperature: 0.3,
-            max_tokens: 4096,
-          });
-          console.log(`[AI Client] Used provider: Groq (${modelName})`);
-          return completion.choices[0]?.message?.content || '';
-        } catch (error: any) {
-          if (error?.status === 429 || error?.status === 503) {
-            console.warn(`[AI Client] Groq overloaded. Attempt ${attempt}`);
-            await sleep(1000 * Math.pow(2, attempt - 1));
-          } else if (error?.status === 404 || error?.status === 400) {
-            console.warn(`[AI Client] Groq model ${modelName} unavailable, trying next...`);
-            break; // Move to next model
-          } else {
-            console.error(`[AI Client] Groq error on attempt ${attempt}:`, error);
-            if (attempt < 2) await sleep(1000);
-          }
-        }
+      try {
+        const completion = await groq.chat.completions.create({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          model: modelName,
+          temperature: 0.3,
+          max_tokens: 4096,
+        });
+        console.log(`[AI Client] Used provider: Groq (${modelName})`);
+        return completion.choices[0]?.message?.content || '';
+      } catch (error: any) {
+        console.warn(`[AI Client] Groq model ${modelName} failed, trying next...`);
       }
     }
-    throw new Error('All Groq models failed. Gemini error: ' + (geminiError?.message || 'none'));
   }
 
-  throw new Error('Failed to generate AI content');
+  // Fallback 2: Cohere
+  const cohereKey = process.env.COHERE_API_KEY;
+  if (cohereKey) {
+    console.log('[AI Client] Falling back to Cohere...');
+    try {
+      const res = await fetch('https://api.cohere.com/v1/chat', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${cohereKey}`,
+          'Content-Type': 'application/json',
+          'accept': 'application/json'
+        },
+        body: JSON.stringify({
+          message: userPrompt,
+          preamble: systemPrompt,
+          model: 'command-r'
+        })
+      });
+      const data = await res.json();
+      if (data.text) {
+        console.log('[AI Client] Used provider: Cohere (command-r)');
+        return data.text;
+      }
+    } catch (e) {
+      console.warn('[AI Client] Cohere failed:', e);
+    }
+  }
+
+  // Fallback 3: OpenRouter (Free Tier)
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  if (openRouterKey) {
+    console.log('[AI Client] Falling back to OpenRouter...');
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openRouterKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'meta-llama/llama-3-8b-instruct:free',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ]
+        })
+      });
+      const data = await res.json();
+      if (data.choices?.[0]?.message?.content) {
+        console.log('[AI Client] Used provider: OpenRouter');
+        return data.choices[0].message.content;
+      }
+    } catch (e) {
+      console.warn('[AI Client] OpenRouter failed:', e);
+    }
+  }
+
+  // Fallback 4: Together AI
+  const togetherKey = process.env.TOGETHER_API_KEY;
+  if (togetherKey) {
+    console.log('[AI Client] Falling back to Together AI...');
+    try {
+      const res = await fetch('https://api.together.xyz/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${togetherKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'meta-llama/Llama-3-70b-chat-hf',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ]
+        })
+      });
+      const data = await res.json();
+      if (data.choices?.[0]?.message?.content) {
+        console.log('[AI Client] Used provider: Together AI');
+        return data.choices[0].message.content;
+      }
+    } catch (e) {
+      console.warn('[AI Client] Together AI failed:', e);
+    }
+  }
+
+  throw new Error('All AI providers exhausted or failed. Gemini error: ' + (geminiError?.message || 'none'));
 }

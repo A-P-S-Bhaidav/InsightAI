@@ -42,7 +42,7 @@ export default function TasksPage() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: '100%' }}>
       {/* Top row: New Task button */}
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <Link href="/tasks/new" style={{ textDecoration: 'none' }}>

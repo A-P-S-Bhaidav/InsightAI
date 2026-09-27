@@ -42,7 +42,8 @@ export default function DatasetsPage() {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: '100%' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
       {datasets.map((ds: any) => (
         <Link key={ds.id} href={`/datasets/${ds.id}`} style={{ textDecoration: 'none' }}>
           <div style={cardStyle}>
@@ -57,6 +58,7 @@ export default function DatasetsPage() {
           </div>
         </Link>
       ))}
+      </div>
     </div>
   );
 }

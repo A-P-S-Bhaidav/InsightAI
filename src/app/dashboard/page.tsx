@@ -3,6 +3,17 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ListTodo, CheckCircle, Database, TrendingUp, Plus, ArrowRight } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+const mockActivityData = [
+  { name: 'Mon', tasks: 4 },
+  { name: 'Tue', tasks: 7 },
+  { name: 'Wed', tasks: 5 },
+  { name: 'Thu', tasks: 12 },
+  { name: 'Fri', tasks: 9 },
+  { name: 'Sat', tasks: 3 },
+  { name: 'Sun', tasks: 8 },
+];
 
 const cardStyle: React.CSSProperties = {
   background: 'var(--bg-surface)',
@@ -143,6 +154,31 @@ export default function DashboardPage() {
               </Link>
             ))}
           </div>
+        </div>
+      </div>
+      
+      {/* Activity Graph Section */}
+      <div style={{ ...cardStyle, flexShrink: 0, marginTop: 16 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px 0' }}>Activity Overview</h2>
+        <div style={{ width: '100%', height: 250 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={mockActivityData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorTasks" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
+              <Tooltip 
+                contentStyle={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 12, color: 'var(--text-primary)' }}
+                itemStyle={{ color: 'var(--color-primary)' }}
+              />
+              <Area type="monotone" dataKey="tasks" stroke="var(--color-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorTasks)" />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>
