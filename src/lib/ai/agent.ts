@@ -268,8 +268,10 @@ Your response must start with [ and end with ]`;
 /**
  * Create a research plan using LLM
  */
-export async function createResearchPlan(parsed: ParsedPrompt, columns: string[]): Promise<ResearchPlan> {
+export async function createResearchPlan(parsed: ParsedPrompt, columns: string[], priority: string = 'medium'): Promise<ResearchPlan> {
   try {
+    const isHighVolume = (parsed.targetCount && parsed.targetCount > 50) || priority === 'high';
+    const queryCount = isHighVolume ? "15-20" : "5-7";
     const prompt = `Create a web research plan for collecting this data:
 
 TASK: ${parsed.description}
@@ -279,7 +281,7 @@ KEYWORDS: ${JSON.stringify(parsed.keywords)}
 
 Return a JSON object (no markdown, no backticks):
 {
-  "searchQueries": ["5-7 specific web search queries"],
+  "searchQueries": ["${queryCount} specific web search queries"],
   "targetSites": ["domains likely to have this data"],
   "extractionStrategy": "brief description",
   "expectedColumns": ${JSON.stringify(columns)}

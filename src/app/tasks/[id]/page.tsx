@@ -79,10 +79,12 @@ export default function TaskDetailPage() {
 
         if (data.nextAction) {
           currentAction = data.nextAction;
-          currentPayload = { queryIndex: data.queryIndex };
+          currentPayload = { queryIndex: data.queryIndex, baselineIndex: data.baselineIndex };
           
           if (data.nextAction === 'search') {
             setEstimatedTime(prev => (prev || 0) + 15); // Add time for each search
+          } else if (data.nextAction === 'baseline') {
+            setEstimatedTime(prev => (prev || 0) + 10); // Add time for each baseline loop
           }
         } else {
           break; // Fallback exit

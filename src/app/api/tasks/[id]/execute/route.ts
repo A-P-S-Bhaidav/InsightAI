@@ -98,7 +98,7 @@ export async function POST(
     // ACTION: PLAN
     if (action === 'plan') {
       await updateStep('plan', 'running');
-      const plan = await createResearchPlan(parsedPrompt, columns);
+      const plan = await createResearchPlan(parsedPrompt, columns, task.priority);
       
       await prisma.workflow.update({
         where: { id: workflow.id },
@@ -112,7 +112,19 @@ export async function POST(
     // ACTION: BASELINE
     if (action === 'baseline') {
       await updateStep('transform', 'running');
-      const llmData = await generateDataFromLLMKnowledge(parsedPrompt, columns, []);
+      
+      const baselineIndex = body.baselineIndex || 0;
+      const targetCount = parsedPrompt.targetCount || 15;
+      
+      // Calculate how many baseline loops to do (each loop gets ~15-20 records)
+      // Max 10 loops to prevent infinite loops, but enough to get ~200 baseline records if target is huge
+      const targetLoops = Math.min(10, Math.ceil(targetCount / 20));
+
+      // Fetch existing records to exclude them from generation
+      const points = await prisma.dataPoint.findMany({ where: { datasetId: dataset.id, sourceId: null } });
+      const existingData = points.map(p => JSON.parse(p.data));
+
+      const llmData = await generateDataFromLLMKnowledge(parsedPrompt, columns, existingData);
       
       for (const record of llmData) {
         await prisma.dataPoint.create({
@@ -120,7 +132,17 @@ export async function POST(
         });
       }
       
-      return NextResponse.json({ nextAction: 'search', queryIndex: 0, message: `Generated ${llmData.length} baseline records` });
+      const totalGenerated = existingData.length + llmData.length;
+      
+      if (baselineIndex + 1 < targetLoops && totalGenerated < targetCount) {
+        return NextResponse.json({ 
+          nextAction: 'baseline', 
+          baselineIndex: baselineIndex + 1, 
+          message: `Generated ${totalGenerated} baseline records...` 
+        });
+      }
+
+      return NextResponse.json({ nextAction: 'search', queryIndex: 0, message: `Generated ${totalGenerated} total baseline records` });
     }
 
     // ACTION: SEARCH
@@ -135,10 +157,13 @@ export async function POST(
       }
 
       const query = plan.searchQueries[queryIndex];
-      const results = await webSearch(query, 5);
+      const results = await webSearch(query, 8); // fetch more results
       
-      // We will only scrape the top 2 pages per query to save time but ensure depth across multiple queries
-      for (const result of results.slice(0, 2)) {
+      // Determine scraping depth based on volume requested
+      const isHighVolume = (parsedPrompt.targetCount && parsedPrompt.targetCount > 50) || task.priority === 'high';
+      const scrapeDepth = isHighVolume ? 6 : 2; // Scrape up to 6 pages per query for high volume
+
+      for (const result of results.slice(0, scrapeDepth)) {
         try {
           const content = await fetchPageContent(result.url);
           if (!content || content.text.length < 50) continue;
