@@ -80,6 +80,40 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!user.name) {
           user.name = user.email?.split('@')[0] || 'User';
         }
+
+        // Manually link the account if the user already exists in the database
+        // This prevents the 'OAuthAccountNotLinked' error when a user signed up with Credentials first.
+        if (user.email) {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email }
+          });
+          
+          if (existingUser) {
+            const existingAccount = await prisma.account.findFirst({
+              where: {
+                userId: existingUser.id,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId
+              }
+            });
+            
+            if (!existingAccount) {
+              await prisma.account.create({
+                data: {
+                  userId: existingUser.id,
+                  type: account.type,
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  access_token: account.access_token,
+                  expires_at: account.expires_at,
+                  token_type: account.token_type,
+                  scope: account.scope,
+                  id_token: account.id_token,
+                }
+              });
+            }
+          }
+        }
       }
       return true;
     },
