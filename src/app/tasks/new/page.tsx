@@ -82,14 +82,14 @@ export default function NewTaskPage() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32, flex: 1 }}>
       {error && (
         <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.12)', color: '#ef4444', fontSize: 13 }}>
           {error}
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 32, flex: 1 }}>
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div>
@@ -193,23 +193,24 @@ export default function NewTaskPage() {
         </form>
 
         {/* Quick Templates */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-primary)', fontSize: 15, fontWeight: 600 }}>
             <Lightbulb size={16} /> Quick Templates
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16, flex: 1 }}>
             {EXAMPLE_PROMPTS.map((ex, i) => (
             <button
               key={i}
               type="button"
               onClick={() => useExample(ex)}
               style={{
-                ...cardStyle, padding: 16, textAlign: 'left', cursor: 'pointer',
+                ...cardStyle, padding: '24px 20px', textAlign: 'left', cursor: 'pointer',
                 border: '1px solid var(--border-color)', transition: 'border-color 150ms',
+                display: 'flex', flexDirection: 'column', height: '100%',
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>{ex.title}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 8 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>{ex.title}</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 16, flex: 1 }}>
                 {ex.prompt.slice(0, 80)}...
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
