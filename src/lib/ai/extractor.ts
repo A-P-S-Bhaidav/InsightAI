@@ -28,19 +28,19 @@ ${pageText.slice(0, 10000)}
 INSTRUCTIONS:
 1. Find ALL records/entries that match the task requirements
 2. Extract data for EACH required column
-3. If a value is not found for a column, use "" (empty string)
+3. STRICT REQUIREMENT: DO NOT HALLUCINATE OR GUESS. If the exact value is not explicitly present in the text, leave the column completely empty (""). Precision is far more important than completeness.
 4. Return a JSON array of objects
 5. Each object must have keys matching the REQUIRED COLUMNS exactly (case-sensitive)
 6. Return ONLY valid JSON — no markdown, no explanation, no backticks
 7. If no relevant data found, return an empty array: []
-8. Extract REAL data from the page. Do NOT fabricate or hallucinate values.
-9. Even partial records (some columns filled) are valuable — include them.
+8. Extract REAL data from the page. Do NOT fabricate values.
+9. Even partial records (some columns filled) are valuable — include them, but strictly omit hallucinated column values.
 
 Example response format:
 [{"${columns[0]}": "value1", "${columns.length > 1 ? columns[1] : 'col2'}": "value2"}]`;
 
     const response = await generateAIContent(
-      'You are a precise data extractor. Return ONLY a valid JSON array. No markdown. No backticks. No explanation text before or after the JSON.',
+      'You are a high-precision data extractor. Return ONLY a valid JSON array. No markdown. No backticks. Strictly extract exact matches. DO NOT guess or hallucinate any data points.',
       prompt
     );
 

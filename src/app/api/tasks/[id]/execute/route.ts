@@ -190,32 +190,31 @@ export async function POST(
           }
           pagesProcessed++;
 
-          // Deep crawling for high volume
-          if (isHighVolume) {
-            const internalLinks = extractInternalLinks(content.html, result.url, 2);
-            for (const link of internalLinks) {
-              if (pagesProcessed >= MAX_PAGES_PER_RUN) break;
-              
-              const subContent = await fetchPageContent(link);
-              if (!subContent || subContent.text.length < 50) continue;
+          // Always-On Deep Crawling (Smart Source Selection)
+          const linksToExtract = isHighVolume ? 3 : 1;
+          const internalLinks = extractInternalLinks(content.html, result.url, linksToExtract);
+          for (const link of internalLinks) {
+            if (pagesProcessed >= MAX_PAGES_PER_RUN) break;
+            
+            const subContent = await fetchPageContent(link);
+            if (!subContent || subContent.text.length < 50) continue;
 
-              let subSource = await prisma.source.findFirst({ where: { url: link } });
-              if (!subSource) {
-                const subDomain = new URL(link).hostname;
-                subSource = await prisma.source.create({
-                  data: { url: link, domain: subDomain, title: subDomain, statusCode: 200 }
-                });
-              }
-
-              const subExtracted = await extractStructuredData(subContent.text, columns, parsedPrompt.description, link);
-              
-              for (const record of subExtracted) {
-                await prisma.dataPoint.create({
-                  data: { datasetId: dataset.id, data: JSON.stringify(record), confidence: 0.85, sourceId: subSource.id }
-                });
-              }
-              pagesProcessed++;
+            let subSource = await prisma.source.findFirst({ where: { url: link } });
+            if (!subSource) {
+              const subDomain = new URL(link).hostname;
+              subSource = await prisma.source.create({
+                data: { url: link, domain: subDomain, title: subDomain, statusCode: 200 }
+              });
             }
+
+            const subExtracted = await extractStructuredData(subContent.text, columns, parsedPrompt.description, link);
+            
+            for (const record of subExtracted) {
+              await prisma.dataPoint.create({
+                data: { datasetId: dataset.id, data: JSON.stringify(record), confidence: 0.85, sourceId: subSource.id }
+              });
+            }
+            pagesProcessed++;
           }
         } catch (e) {
           console.error(`Failed to process ${result.url}:`, e);
@@ -237,7 +236,11 @@ export async function POST(
       
       // Load all points, deduplicate, compute score
       const points = await prisma.dataPoint.findMany({ where: { datasetId: dataset.id } });
-      const rawRecords = points.map(p => JSON.parse(p.data));
+      const rawRecords = points.map(p => {
+        const data = JSON.parse(p.data);
+        data._sourceId = p.sourceId; // Inject sourceId to preserve it through merge
+        return data;
+      });
       
       const merged = mergeRecords(rawRecords, columns);
       
@@ -245,8 +248,10 @@ export async function POST(
       await prisma.dataPoint.deleteMany({ where: { datasetId: dataset.id } });
       
       for (const record of merged) {
+        const sourceId = record._sourceId;
+        delete record._sourceId; // Remove internal field before saving
         await prisma.dataPoint.create({
-          data: { datasetId: dataset.id, data: JSON.stringify(record), confidence: 0.85 }
+          data: { datasetId: dataset.id, data: JSON.stringify(record), confidence: 0.85, sourceId: sourceId || null }
         });
       }
 

@@ -346,14 +346,21 @@ export async function fetchPageContent(url: string): Promise<{ text: string; htm
  * Extract internal links from a page's HTML to enable deep crawling
  */
 export function extractInternalLinks(html: string, baseUrl: string, maxLinks: number = 10): string[] {
-  const links: string[] = [];
+  const scoredLinks: { url: string; score: number }[] = [];
   try {
     const $ = cheerio.load(html);
     const baseDomain = new URL(baseUrl).hostname;
+    const seen = new Set<string>();
+    
+    // High-value keywords for deep research
+    const highValueKeywords = ['about', 'team', 'profile', 'people', 'leadership', 'contact', 'staff', 'management', 'founders'];
+    // Low-value keywords
+    const lowValueKeywords = ['login', 'signup', 'privacy', 'terms', 'legal', 'forgot', 'cart'];
     
     $('a').each((_, el) => {
-      if (links.length >= maxLinks) return false;
       const href = $(el).attr('href');
+      const text = $(el).text().toLowerCase();
+      
       if (!href || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
       
       try {
@@ -361,9 +368,24 @@ export function extractInternalLinks(html: string, baseUrl: string, maxLinks: nu
         const linkDomain = new URL(absoluteUrl).hostname;
         
         // Only keep links to the same domain (internal crawling)
-        if (linkDomain === baseDomain || linkDomain.endsWith(`.${baseDomain}`)) {
-          if (!links.includes(absoluteUrl) && absoluteUrl !== baseUrl) {
-            links.push(absoluteUrl);
+        if ((linkDomain === baseDomain || linkDomain.endsWith(`.${baseDomain}`)) && absoluteUrl !== baseUrl) {
+          if (!seen.has(absoluteUrl)) {
+            seen.add(absoluteUrl);
+            
+            let score = 0;
+            const lowerUrl = absoluteUrl.toLowerCase();
+            
+            // Score based on URL and text
+            highValueKeywords.forEach(kw => {
+              if (lowerUrl.includes(kw)) score += 2;
+              if (text.includes(kw)) score += 2;
+            });
+            lowValueKeywords.forEach(kw => {
+              if (lowerUrl.includes(kw)) score -= 5;
+              if (text.includes(kw)) score -= 5;
+            });
+            
+            scoredLinks.push({ url: absoluteUrl, score });
           }
         }
       } catch { /* Ignore invalid URLs */ }
@@ -371,5 +393,10 @@ export function extractInternalLinks(html: string, baseUrl: string, maxLinks: nu
   } catch (error) {
     console.error('[WebSearch] Failed to extract links:', error);
   }
-  return links;
+  
+  // Sort by score descending and take maxLinks
+  return scoredLinks
+    .sort((a, b) => b.score - a.score)
+    .slice(0, maxLinks)
+    .map(link => link.url);
 }
