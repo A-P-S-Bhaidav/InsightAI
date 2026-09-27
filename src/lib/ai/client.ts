@@ -38,7 +38,8 @@ async function callProvider(provider: AIProvider, systemPrompt: string, userProm
       const key = process.env.GROQ_API_KEY;
       if (!key) throw new Error('GROQ_API_KEY missing');
       const groq = new Groq({ apiKey: key });
-      const models = ['llama3-70b-8192', 'mixtral-8x7b-32768'];
+      const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+      let lastGroqError: any = null;
       for (const modelName of models) {
         try {
           const completion = await groq.chat.completions.create({
@@ -47,11 +48,12 @@ async function callProvider(provider: AIProvider, systemPrompt: string, userProm
           });
           console.log(`[AI Client] Used provider: Groq (${modelName})`);
           return completion.choices[0]?.message?.content || '';
-        } catch (e) {
-          /* try next model */
+        } catch (e: any) {
+          lastGroqError = e;
+          console.warn(`[AI Client] Groq model ${modelName} failed:`, e.message || e);
         }
       }
-      throw new Error('Groq failed');
+      throw new Error(`Groq failed: ${lastGroqError?.message || 'Unknown error'}`);
     }
 
     case 'Cohere': {
