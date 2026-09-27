@@ -85,35 +85,43 @@ export async function POST(
       });
 
       let stepIndex = 0;
-      const agentResult = await runAgenticRAG(parsedPrompt, async (agentStep) => {
-        const typeMap: Record<string, number> = {
-          plan: 0, search: 1, retrieve: 2, validate: 3, synthesize: 3,
-        };
-
-        const dbStepIdx = typeMap[agentStep.type] ?? stepIndex;
-        if (dbStepIdx < dbSteps.length) {
-          const dbStep = dbSteps[dbStepIdx];
-          try {
-            await prisma.workflowStep.update({
-              where: { id: dbStep.id },
-              data: {
-                status: agentStep.status,
-                output: agentStep.result ? JSON.stringify({ detail: agentStep.result }) : undefined,
-                startedAt: agentStep.startedAt || undefined,
-                completedAt: agentStep.completedAt || undefined,
-              },
-            });
-
-            if (agentStep.status === 'completed') {
-              stepIndex = dbStepIdx + 1;
-              await prisma.workflow.update({
-                where: { id: workflow.id },
-                data: { progress: stepIndex },
-              });
-            }
-          } catch { /* non-critical tracking update */ }
-        }
+      
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Pipeline execution timed out after 50 seconds (Vercel limit).')), 50000);
       });
+      
+      const agentResult = await Promise.race([
+        timeoutPromise,
+        runAgenticRAG(parsedPrompt, async (agentStep) => {
+          const typeMap: Record<string, number> = {
+            plan: 0, search: 1, retrieve: 2, validate: 3, synthesize: 3,
+          };
+  
+          const dbStepIdx = typeMap[agentStep.type] ?? stepIndex;
+          if (dbStepIdx < dbSteps.length) {
+            const dbStep = dbSteps[dbStepIdx];
+            try {
+              await prisma.workflowStep.update({
+                where: { id: dbStep.id },
+                data: {
+                  status: agentStep.status,
+                  output: agentStep.result ? JSON.stringify({ detail: agentStep.result }) : undefined,
+                  startedAt: agentStep.startedAt || undefined,
+                  completedAt: agentStep.completedAt || undefined,
+                },
+              });
+  
+              if (agentStep.status === 'completed') {
+                stepIndex = dbStepIdx + 1;
+                await prisma.workflow.update({
+                  where: { id: workflow.id },
+                  data: { progress: stepIndex },
+                });
+              }
+            } catch { /* non-critical tracking update */ }
+          }
+        })
+      ]);
 
       console.log(`[Execute] Pipeline complete: ${agentResult.data.length} records, quality=${agentResult.quality}`);
 

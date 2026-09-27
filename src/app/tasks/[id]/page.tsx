@@ -45,19 +45,23 @@ export default function TaskDetailPage() {
 
   const handleExecute = async () => {
     setExecuting(true);
+    
+    // Start polling immediately
+    const poll = setInterval(async () => {
+      const r = await fetch(`/api/tasks/${params.id}`);
+      const d = await r.json();
+      setTask(d);
+      if (d.status === 'completed' || d.status === 'failed') {
+        clearInterval(poll);
+        setExecuting(false);
+      }
+    }, 2000);
+
     try {
+      // Fire and let it run (might timeout in browser but server continues up to 60s)
       await fetch(`/api/tasks/${params.id}/execute`, { method: 'POST' });
-      const poll = setInterval(async () => {
-        const r = await fetch(`/api/tasks/${params.id}`);
-        const d = await r.json();
-        setTask(d);
-        if (d.status === 'completed' || d.status === 'failed') {
-          clearInterval(poll);
-          setExecuting(false);
-        }
-      }, 2000);
     } catch {
-      setExecuting(false);
+      // Ignore browser timeouts
     }
   };
 
