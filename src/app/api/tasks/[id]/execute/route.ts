@@ -164,7 +164,7 @@ export async function POST(
       const scrapeDepth = isHighVolume ? 8 : 5; // Scrape up to 8 pages per query
 
       let pagesProcessed = 0;
-      const MAX_PAGES_PER_RUN = 4; // Balance between yielding data and preventing Vercel timeouts
+      const MAX_PAGES_PER_RUN = isHighVolume ? 2 : 3; // Keep it low to prevent Vercel 60s timeouts during high volume
 
       for (const result of results.slice(0, scrapeDepth)) {
         if (pagesProcessed >= MAX_PAGES_PER_RUN) break;

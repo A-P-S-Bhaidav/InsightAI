@@ -34,6 +34,7 @@ INSTRUCTIONS:
 6. Return ONLY valid JSON — no markdown, no explanation, no backticks
 7. Extract REAL data from the page. Do NOT fabricate values, but do include partial records if you find them.
 8. AGGRESSIVE EXTRACTION: We need volume. Extract every possible matching entity you can find on the page.
+9. STRICT ENFORCEMENT ON DATES: If the task specifies a year (e.g. 2026) or a timeframe (e.g. "recent"), you MUST completely IGNORE and DROP any records from older years (like 2022, 2024, etc.). DO NOT extract outdated records under any circumstances.
 
 Example response format:
 [{"${columns[0]}": "value1", "${columns.length > 1 ? columns[1] : 'col2'}": "value2"}]`;

@@ -160,7 +160,7 @@ export default function NewTaskPage() {
               <label style={labelStyle}>Target Rows</label>
               <input
                 type="number" style={inputStyle} value={rowCount}
-                onChange={e => setRowCount(Math.min(500, Math.max(5, parseInt(e.target.value) || 20)))}
+                onChange={e => setRowCount(parseInt(e.target.value) || 0)}
                 min={5} max={500}
               />
             </div>

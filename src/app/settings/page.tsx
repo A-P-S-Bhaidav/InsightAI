@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@/components/layout/ThemeProvider';
 import { Key, Plus, Trash2, Copy, Check, Loader2 } from 'lucide-react';
 
-const TABS = ['Profile', 'Appearance', 'API Keys', 'Usage'];
+const TABS = ['Profile', 'Appearance', 'API Keys', 'AI Models', 'Usage'];
 
 const cardStyle: React.CSSProperties = {
   background: 'var(--bg-surface)',
@@ -254,6 +254,34 @@ export default function SettingsPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* AI Models */}
+      {tab === 'AI Models' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={cardStyle}>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px 0' }}>Data Intelligence Architecture</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 20 }}>
+              InsightAI uses a multi-model cascading fallback system. This ensures 99.9% uptime and selects the best model for the specific task at hand.
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[
+                { task: 'Research Planning & Workflows', models: 'Llama 3.3 70B (Groq)', desc: 'Used for complex reasoning and generating boolean search plans.' },
+                { task: 'Web Page Extraction', models: 'Llama 3 8B (Groq)', desc: 'Used for extremely fast, high-volume structured data extraction from HTML.' },
+                { task: 'Fallback / Synthesis', models: 'Gemini 1.5 Flash / Cohere', desc: 'Engaged automatically if primary reasoning models hit rate limits.' }
+              ].map(m => (
+                <div key={m.task} style={{ padding: 16, background: 'var(--bg-surface-elevated)', borderRadius: 8, border: '1px solid var(--border-light)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{m.task}</div>
+                    <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 11, color: '#3b82f6', background: 'rgba(59,130,246,0.12)' }}>{m.models}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{m.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
