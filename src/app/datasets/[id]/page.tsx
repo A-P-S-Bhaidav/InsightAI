@@ -117,7 +117,7 @@ export default function DatasetDetailPage() {
                         const val = String(row[col] ?? '');
                         const isUrl = val.startsWith('http');
                         return (
-                          <td key={col} style={{ padding: '8px 12px', fontSize: 13, color: 'var(--text-primary)', maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <td key={col} style={{ padding: '8px 12px', fontSize: 13, color: 'var(--text-primary)', maxWidth: 250, overflow: 'hidden', wordBreak: 'break-word', whiteSpace: 'normal' }}>
                             {isUrl ? <a href={val} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>{val}</a> : val}
                           </td>
                         );

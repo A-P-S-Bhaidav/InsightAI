@@ -11,7 +11,7 @@ interface OnboardingTutorialProps {
 const STEPS = [
   {
     icon: <Sparkles size={24} />,
-    title: 'Meet Agentic RAG',
+    title: 'Meet Data Extraction Engine',
     subtitle: 'The AI brain behind InsightAI',
     description: 'Unlike simple scrapers, InsightAI uses an autonomous AI agent. It plans research, searches the web, and reads pages just like a human analyst.',
     color: '#8b5cf6',

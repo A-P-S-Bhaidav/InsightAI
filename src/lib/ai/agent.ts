@@ -29,7 +29,7 @@ interface ResearchPlan {
 }
 
 /**
- * Agentic RAG Orchestrator — Reliable Data Collection Pipeline
+ * Data Extraction Engine Orchestrator — Reliable Data Collection Pipeline
  * 
  * Strategy: LLM-First with Web Augmentation
  * 1. PLAN: Create research plan
@@ -181,7 +181,7 @@ export async function runAgenticRAG(
  * Use LLM's training knowledge to generate factual data.
  * This is the PRIMARY data source — always produces results.
  */
-async function generateDataFromLLMKnowledge(
+export async function generateDataFromLLMKnowledge(
   parsed: ParsedPrompt,
   columns: string[],
   existingData: Record<string, string>[]
@@ -268,7 +268,7 @@ Your response must start with [ and end with ]`;
 /**
  * Create a research plan using LLM
  */
-async function createResearchPlan(parsed: ParsedPrompt, columns: string[]): Promise<ResearchPlan> {
+export async function createResearchPlan(parsed: ParsedPrompt, columns: string[]): Promise<ResearchPlan> {
   try {
     const prompt = `Create a web research plan for collecting this data:
 

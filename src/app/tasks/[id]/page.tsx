@@ -33,6 +33,8 @@ export default function TaskDetailPage() {
   const [loading, setLoading] = useState(true);
   const [executing, setExecuting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [liveLog, setLiveLog] = useState<string[]>([]);
+  const [estimatedTime, setEstimatedTime] = useState<number | null>(null);
 
   const fetchTask = () => {
     fetch(`/api/tasks/${params.id}`)
@@ -45,23 +47,55 @@ export default function TaskDetailPage() {
 
   const handleExecute = async () => {
     setExecuting(true);
-    
-    // Start polling immediately
-    const poll = setInterval(async () => {
-      const r = await fetch(`/api/tasks/${params.id}`);
-      const d = await r.json();
-      setTask(d);
-      if (d.status === 'completed' || d.status === 'failed') {
-        clearInterval(poll);
-        setExecuting(false);
-      }
-    }, 2000);
+    setLiveLog(['Initializing Deep Research pipeline...']);
+    setEstimatedTime(45); // Base estimation
+
+    const timer = setInterval(() => {
+      setEstimatedTime(prev => prev && prev > 0 ? prev - 1 : 0);
+    }, 1000);
 
     try {
-      // Fire and let it run (might timeout in browser but server continues up to 60s)
-      await fetch(`/api/tasks/${params.id}/execute`, { method: 'POST' });
-    } catch {
-      // Ignore browser timeouts
+      let currentAction = 'start';
+      let currentPayload: any = {};
+      
+      while (currentAction !== 'done') {
+        const res = await fetch(`/api/tasks/${params.id}/execute`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: currentAction, ...currentPayload }),
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(data.error || 'Execution failed');
+        }
+
+        if (data.message) {
+          setLiveLog(prev => [...prev, data.message]);
+        }
+        
+        await fetchTask(); // Refresh UI state
+
+        if (data.nextAction) {
+          currentAction = data.nextAction;
+          currentPayload = { queryIndex: data.queryIndex };
+          
+          if (data.nextAction === 'search') {
+            setEstimatedTime(prev => (prev || 0) + 15); // Add time for each search
+          }
+        } else {
+          break; // Fallback exit
+        }
+      }
+    } catch (err: any) {
+      console.error(err);
+      setLiveLog(prev => [...prev, `Error: ${err.message}`]);
+    } finally {
+      clearInterval(timer);
+      setExecuting(false);
+      setEstimatedTime(null);
+      await fetchTask();
     }
   };
 
@@ -151,6 +185,35 @@ export default function TaskDetailPage() {
       {task.status === 'failed' && task.errorMessage && (
         <div style={{ padding: '12px 16px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: 13 }}>
           <strong>Error:</strong> {task.errorMessage}
+        </div>
+      )}
+
+      {/* Live Feed */}
+      {(executing || liveLog.length > 0) && (
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+             <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+               <Zap size={16} color="var(--color-primary)" /> Live Execution Feed
+             </h3>
+             {estimatedTime !== null && (
+               <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                 Estimated time remaining: <strong>{estimatedTime}s</strong>
+               </div>
+             )}
+          </div>
+          <div style={{ background: 'var(--bg-default)', borderRadius: 8, padding: 16, fontFamily: 'monospace', fontSize: 12, color: 'var(--text-primary)', maxHeight: 200, overflowY: 'auto' }}>
+            {liveLog.map((log, i) => (
+              <div key={i} style={{ marginBottom: 4, display: 'flex', gap: 8 }}>
+                 <span style={{ color: 'var(--color-primary)' }}>[{new Date().toLocaleTimeString()}]</span>
+                 <span>{log}</span>
+              </div>
+            ))}
+            {executing && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', marginTop: 8 }}>
+                <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Processing next step...
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -284,7 +347,9 @@ export default function TaskDetailPage() {
       {/* No workflows yet */}
       {allSteps.length === 0 && task.status === 'pending' && (
         <div style={{ ...cardStyle, textAlign: 'center', padding: 40 }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>🚀</div>
+          <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
+            <Database size={32} color="var(--color-primary)" />
+          </div>
           <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 6 }}>Ready to Execute</div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>Click &quot;Execute&quot; to start the AI-powered data collection pipeline.</div>
         </div>

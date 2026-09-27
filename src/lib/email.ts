@@ -145,7 +145,7 @@ export async function sendWeeklyDigestEmail(
 ): Promise<boolean> {
   return sendEmail({
     to,
-    subject: `📊 Your InsightAI Weekly Summary`,
+    subject: `[InsightAI] Your Weekly Summary`,
     html: `
 <!DOCTYPE html>
 <html>

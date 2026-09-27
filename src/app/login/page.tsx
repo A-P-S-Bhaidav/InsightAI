@@ -75,7 +75,7 @@ function LoginForm() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg-dark, #0a0a0f)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-default)' }}>
       <div className="card animate-fade-in" style={{ display: 'flex', maxWidth: '1000px', width: '100%', margin: '2rem', padding: '0', overflow: 'hidden', minHeight: '600px' }}>
         
         {/* Left Side - Branding */}
@@ -92,7 +92,7 @@ function LoginForm() {
         </div>
 
         {/* Right Side - Login Form */}
-        <div style={{ flex: 1, padding: '4rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--color-bg-card, #12121a)' }}>
+        <div style={{ flex: 1, padding: '4rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--bg-surface)' }}>
           <div style={{ marginBottom: '2rem' }}>
             <h2 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Welcome back</h2>
             <p style={{ color: 'var(--color-text-secondary)' }}>Sign in to continue to your dashboard</p>
@@ -194,7 +194,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg-dark, #0a0a0f)' }}><Loader2 className="animate-spin" size={32} /></div>}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-default)' }}><Loader2 className="animate-spin" size={32} /></div>}>
       <LoginForm />
     </Suspense>
   );
