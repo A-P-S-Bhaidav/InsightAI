@@ -160,6 +160,91 @@ export async function generateAIContent(systemPrompt: string, userPrompt: string
       console.warn('[AI Client] Together AI failed:', e);
     }
   }
+  // Fallback 5: Hugging Face Inference API
+  const hfKey = process.env.HF_API_KEY;
+  if (hfKey) {
+    console.log('[AI Client] Falling back to Hugging Face...');
+    try {
+      const res = await fetch('https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B-Instruct', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${hfKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          inputs: `<|system|>\n${systemPrompt}\n<|user|>\n${userPrompt}\n<|assistant|>\n`,
+          parameters: { max_new_tokens: 4096, temperature: 0.3 }
+        })
+      });
+      const data = await res.json();
+      if (data?.[0]?.generated_text) {
+        console.log('[AI Client] Used provider: Hugging Face');
+        const text = data[0].generated_text;
+        // Basic cleanup of HF instruct prompt formats
+        return text.split('<|assistant|>\n').pop() || text;
+      }
+    } catch (e) {
+      console.warn('[AI Client] Hugging Face failed:', e);
+    }
+  }
+
+  // Fallback 6: Cerebras
+  const cerebrasKey = process.env.CEREBRAS_API_KEY;
+  if (cerebrasKey) {
+    console.log('[AI Client] Falling back to Cerebras...');
+    try {
+      const res = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${cerebrasKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'llama3.1-8b',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ]
+        })
+      });
+      const data = await res.json();
+      if (data.choices?.[0]?.message?.content) {
+        console.log('[AI Client] Used provider: Cerebras');
+        return data.choices[0].message.content;
+      }
+    } catch (e) {
+      console.warn('[AI Client] Cerebras failed:', e);
+    }
+  }
+
+  // Fallback 7: SambaNova
+  const sambanovaKey = process.env.SAMBANOVA_API_KEY;
+  if (sambanovaKey) {
+    console.log('[AI Client] Falling back to SambaNova...');
+    try {
+      const res = await fetch('https://api.sambanova.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sambanovaKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'Meta-Llama-3.1-8B-Instruct',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ]
+        })
+      });
+      const data = await res.json();
+      if (data.choices?.[0]?.message?.content) {
+        console.log('[AI Client] Used provider: SambaNova');
+        return data.choices[0].message.content;
+      }
+    } catch (e) {
+      console.warn('[AI Client] SambaNova failed:', e);
+    }
+  }
 
   throw new Error('All AI providers exhausted or failed. Gemini error: ' + (geminiError?.message || 'none'));
 }
