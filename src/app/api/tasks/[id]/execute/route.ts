@@ -113,6 +113,18 @@ export async function POST(
     if (action === 'baseline') {
       await updateStep('transform', 'running');
       
+      const desc = (parsedPrompt.description || '').toLowerCase();
+      const keywords = (parsedPrompt.keywords || []).map((k: string) => k.toLowerCase()).join(' ');
+      const combinedText = `${desc} ${keywords}`;
+      
+      // If the user explicitly asks for recent data or specific current/future years, skip LLM baseline completely
+      // because LLMs have a knowledge cutoff and will confidently hallucinate or provide old data.
+      const requiresRecent = /202[4-9]|recent|latest|new|current|up to date|this year/.test(combinedText);
+      
+      if (requiresRecent) {
+        return NextResponse.json({ nextAction: 'search', queryIndex: 0, message: `Skipping AI baseline generation to enforce strict data recency.` });
+      }
+
       const baselineIndex = body.baselineIndex || 0;
       const targetCount = parsedPrompt.targetCount || 15;
       
@@ -161,10 +173,11 @@ export async function POST(
       
       // Determine scraping depth based on volume requested
       const isHighVolume = (parsedPrompt.targetCount && parsedPrompt.targetCount > 50) || task.priority === 'high';
+      const isVeryHighVolume = parsedPrompt.targetCount && parsedPrompt.targetCount >= 200;
       const scrapeDepth = isHighVolume ? 8 : 5; // Scrape up to 8 pages per query
 
       let pagesProcessed = 0;
-      const MAX_PAGES_PER_RUN = isHighVolume ? 2 : 3; // Keep it low to prevent Vercel 60s timeouts during high volume
+      const MAX_PAGES_PER_RUN = isVeryHighVolume ? 2 : 4; // Only keep it low to prevent timeouts on very high volume requests
 
       for (const result of results.slice(0, scrapeDepth)) {
         if (pagesProcessed >= MAX_PAGES_PER_RUN) break;
