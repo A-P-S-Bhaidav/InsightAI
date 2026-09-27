@@ -54,7 +54,7 @@ export async function generateAIContent(systemPrompt: string, userPrompt: string
     const groq = new Groq({ apiKey: groqKey });
     
     // In case we want to try groq
-    const groqModels = ['llama3-70b-8192', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant'];
+    const groqModels = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b'];
 
     for (const modelName of groqModels) {
       for (let attempt = 1; attempt <= 2; attempt++) {
