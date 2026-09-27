@@ -43,9 +43,8 @@ Example for "Get me founders of AI startups with their emails":
   "description": "Contact information for founders of AI/deep tech startups including email and LinkedIn",
   "columns": ["Founder Name", "Company Name", "Email", "LinkedIn URL", "Industry", "Location"]
 }`;
-
   try {
-    const responseText = await generateAIContent(systemInstruction, prompt);
+    const responseText = await generateAIContent(systemInstruction, prompt, 'reasoning');
     const cleanedText = responseText.replace(/```json\n?|\n?```/g, '').trim();
     const parsed = JSON.parse(cleanedText) as ParsedPrompt;
     // Ensure columns exist

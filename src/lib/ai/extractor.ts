@@ -40,7 +40,8 @@ Example response format:
 
     const response = await generateAIContent(
       'You are a high-volume data extractor. Return ONLY a valid JSON array. No markdown. Extract every matching record you can find, even if partial.',
-      prompt
+      prompt,
+      'extraction'
     );
 
     // Clean the response — handle common LLM quirks
