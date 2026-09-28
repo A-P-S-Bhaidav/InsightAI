@@ -20,6 +20,8 @@
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
     "date-fns": "^4.4.0",
+    "duck-duck-scrape": "^2.2.7",
+    "google-it": "^1.6.4",
     "groq-sdk": "^1.6.0",
     "inngest": "^4.21.0",
     "jspdf": "^4.2.1",
