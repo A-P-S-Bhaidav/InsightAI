@@ -89,24 +89,24 @@ export default function NewTaskPage() {
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 32, flex: 1 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 32, flex: 1, minHeight: 0 }}>
         {/* Form */}
-        <form onSubmit={handleSubmit} style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <form onSubmit={handleSubmit} style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
           <div>
             <label style={labelStyle}>Task Title *</label>
             <input style={inputStyle} value={title} onChange={e => setTitle(e.target.value)}
               placeholder="e.g., Deep Tech Founder Contacts" required />
           </div>
 
-          <div>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
             <label style={labelStyle}>What data do you need? *</label>
             <textarea
-              style={{ ...inputStyle, minHeight: 120, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6 }}
+              style={{ ...inputStyle, flex: 1, minHeight: 180, resize: 'none', fontFamily: 'inherit', lineHeight: 1.6 }}
               value={prompt} onChange={e => setPrompt(e.target.value)}
               placeholder="Describe the data you want to collect in detail. Be specific about what fields you need, which sources to look at, and any filters..."
               required
             />
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8 }}>
               Tip: The more specific you are, the better the results. Mention exact columns, sources, and filters.
             </div>
           </div>
@@ -126,27 +126,27 @@ export default function NewTaskPage() {
                 type="button" onClick={addColumn}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: 40, height: 40, borderRadius: 8,
+                  width: 44, height: 44, borderRadius: 8,
                   background: 'var(--color-primary)', color: '#fff', border: 'none', cursor: 'pointer', flexShrink: 0,
                 }}
               >
-                <Plus size={16} />
+                <Plus size={18} />
               </button>
             </div>
             {columns.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {columns.map((col, i) => (
                   <span key={col} style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '5px 10px', borderRadius: 6, fontSize: 12, fontWeight: 500,
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '6px 12px', borderRadius: 8, fontSize: 13, fontWeight: 500,
                     background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)',
                     border: '1px solid var(--border-color)',
                   }}>
-                    <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>#{i + 1}</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>#{i + 1}</span>
                     {col}
                     <button type="button" onClick={() => removeColumn(col)}
                       style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }}>
-                      <X size={12} />
+                      <X size={14} />
                     </button>
                   </span>
                 ))}
@@ -155,7 +155,7 @@ export default function NewTaskPage() {
           </div>
 
           {/* Row count + Priority */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
             <div>
               <label style={labelStyle}>Target Rows</label>
               <input
@@ -181,46 +181,46 @@ export default function NewTaskPage() {
           <button
             type="submit" disabled={loading}
             style={{
-              width: '100%', height: 46, borderRadius: 8, border: 'none',
-              background: 'var(--color-primary)', color: '#fff', fontSize: 14, fontWeight: 600,
+              width: '100%', height: 50, borderRadius: 8, border: 'none', marginTop: 10,
+              background: 'var(--color-primary)', color: '#fff', fontSize: 15, fontWeight: 600,
               cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             }}
           >
-            {loading && <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />}
+            {loading && <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />}
             {loading ? 'Creating Task...' : 'Create & Execute Task'}
           </button>
         </form>
 
         {/* Quick Templates */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-primary)', fontSize: 15, fontWeight: 600 }}>
-            <Lightbulb size={16} /> Quick Templates
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)', fontSize: 16, fontWeight: 600 }}>
+            <Lightbulb size={18} /> Quick Templates
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16, flex: 1 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
             {EXAMPLE_PROMPTS.map((ex, i) => (
             <button
               key={i}
               type="button"
               onClick={() => useExample(ex)}
               style={{
-                ...cardStyle, padding: '24px 20px', textAlign: 'left', cursor: 'pointer',
+                ...cardStyle, padding: '28px 24px', textAlign: 'left', cursor: 'pointer',
                 border: '1px solid var(--border-color)', transition: 'border-color 150ms',
                 display: 'flex', flexDirection: 'column', height: '100%',
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>{ex.title}</div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 16, flex: 1 }}>
-                {ex.prompt.slice(0, 80)}...
+              <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>{ex.title}</div>
+              <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 20, flex: 1 }}>
+                {ex.prompt.slice(0, 100)}...
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {ex.columns.slice(0, 4).map(col => (
                   <span key={col} style={{
-                    padding: '2px 6px', borderRadius: 4, fontSize: 10,
+                    padding: '4px 8px', borderRadius: 4, fontSize: 11,
                     background: 'var(--bg-surface-elevated)', color: 'var(--text-muted)',
                   }}>{col}</span>
                 ))}
-                {ex.columns.length > 4 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>+{ex.columns.length - 4}</span>}
+                {ex.columns.length > 4 && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>+{ex.columns.length - 4}</span>}
               </div>
             </button>
           ))}

@@ -5,15 +5,7 @@ import Link from 'next/link';
 import { ListTodo, CheckCircle, Database, TrendingUp, Plus, ArrowRight } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-const mockActivityData = [
-  { name: 'Mon', tasks: 4 },
-  { name: 'Tue', tasks: 7 },
-  { name: 'Wed', tasks: 5 },
-  { name: 'Thu', tasks: 12 },
-  { name: 'Fri', tasks: 9 },
-  { name: 'Sat', tasks: 3 },
-  { name: 'Sun', tasks: 8 },
-];
+
 
 const cardStyle: React.CSSProperties = {
   background: 'var(--bg-surface)',
@@ -58,12 +50,22 @@ export default function DashboardPage() {
     { icon: <TrendingUp size={18} />, title: 'Avg Quality', value: data?.averageQualityScore ? `${Math.round(data.averageQualityScore)}%` : '0%', color: '#f59e0b' },
   ];
 
-  const chartData = data?.tasksOverTime?.length 
-    ? data.tasksOverTime.map((d: any) => ({
-        name: new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' }),
-        tasks: d.count
-      }))
-    : mockActivityData;
+  const chartData = loading 
+    ? Array.from({ length: 7 }).map((_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        return { name: d.toLocaleDateString('en-US', { weekday: 'short' }), tasks: 0 };
+      })
+    : (data?.tasksOverTime?.length 
+        ? data.tasksOverTime.map((d: any) => ({
+            name: new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' }),
+            tasks: d.count
+          }))
+        : Array.from({ length: 7 }).map((_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - (6 - i));
+            return { name: d.toLocaleDateString('en-US', { weekday: 'short' }), tasks: 0 };
+          }));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>

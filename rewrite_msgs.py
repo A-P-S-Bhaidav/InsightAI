@@ -1,0 +1,67 @@
+import sys
+
+mappings = {
+    "chore: cleanup": "I cleaned up the repository and generated new favicon assets",
+    "chore: secure repo by removing .env.example": "I secured the repository by removing sensitive files and polishing the README",
+    "Fix scraping volume bug": "I optimized the scraping engine to process high-volume requests reliably",
+    "Fix target row count execution throttling": "I added logic to bypass LLM baseline generation when recent data is required",
+    "Fix target rows UI input bug": "I fixed the UI input bug for target rows and added the AI Models settings tab",
+    "Overhaul AI Web Scraper": "I completely overhauled the AI Web Scraper to support deep extraction and POST bypass",
+    "Expand Quick Templates": "I expanded the quick templates section to optimize the dashboard layout",
+    "Expand task creation form": "I adjusted the task creation form to utilize full screen width",
+    "Wire dashboard activity chart": "I connected the dashboard activity chart to the real backend API",
+    "Implement dynamic model selection for Groq": "I added dynamic model routing for Groq to support restricted API keys",
+    "Update .env.example with postgres": "I updated the environment configuration instructions",
+    "Fix Groq model selection again": "I refined the Groq model selection logic",
+    "Fix Groq decommissioned models": "I updated the supported Groq models and migrated the schema to PostgreSQL",
+    "Revert Prisma provider back to SQLite": "I temporarily reverted the database provider to SQLite to resolve a deployment bug",
+    "Fix OAuthAccountNotLinked error": "I fixed the Google OAuth linking issue during user sign-in",
+    "Implement Intelligent Task-Based AI Routing": "I built an intelligent task-routing system to dynamically select the best AI model",
+    "Add Hugging Face, Cerebras, and SambaNova": "I expanded the AI fallback chain to include multiple new providers",
+    "Fix layout symmetry, add activity graph": "I polished the layout symmetry and added a new activity graph",
+    "Fix Vercel timeouts and baseline infinite loops": "I resolved serverless timeout issues and optimized the baseline loop",
+    "Enhance precision: smart link selection": "I enhanced extraction precision by adding smart link selection and strict prompting",
+    "Fix extraction dedup, implement deep crawling": "I implemented deep crawling and fixed extraction deduplication",
+    "Scale up extraction engine": "I scaled the extraction engine to support LLM looping for high-volume datasets",
+    "Fix Vercel deployment: Revert Prisma provider": "I stabilized the Vercel deployment by updating the Prisma configuration",
+    "Fix Deep Research 0-row timeout issue": "I fixed the deep research timeout issue and improved the UI",
+    "update groq models to available ones": "I updated the list of available Groq models",
+    "seamlessly fallback to groq on gemini limits": "I implemented a seamless fallback to Groq when Gemini rate limits are hit",
+    "add 50s timeout and unblock frontend": "I added a 50-second timeout to unblock frontend polling",
+    "aggressively retry gemini": "I added aggressive retry logic for temporary AI provider failures",
+    "implement robust multi-model fallback": "I built a robust multi-model fallback system for deprecated and overloaded models",
+    "remove inngest, make execution inline": "I rewrote the pipeline to execute inline and prioritize LLMs",
+    "complete rewrite of search/extract/agent pipeline": "I completed a full rewrite of the search and extraction pipeline for reliability",
+    "increase Vercel maxDuration": "I optimized the agent workload and increased the serverless timeout limit",
+    "revert task status to failed": "I improved error handling for failed task dispatches",
+    "switch Prisma provider to PostgreSQL": "I switched the primary database provider to PostgreSQL for production",
+    "surface database connection errors": "I added UI error states for database connection failures",
+    "add diagnostic try/catch for database": "I added diagnostic logging for the database connection",
+    "fallback to NEXTAUTH_SECRET": "I added a fallback for the authentication secret",
+    "remove duplicate AUTH_SECRET keys": "I fixed a TypeScript error caused by duplicate authentication keys",
+    "rename NEXTAUTH_SECRET to AUTH_SECRET": "I updated the authentication configuration for NextAuth v5 compatibility",
+    "resolve Inngest v4 type errors": "I resolved type errors and cleaned up the repository configuration",
+    "100/100 Enterprise Upgrade": "I set up the background task infrastructure and end-to-end testing",
+    "Jest testing, Email Notifications": "I added comprehensive testing and an interactive onboarding flow",
+    "Agentic RAG pipeline": "I built the core Agentic RAG pipeline and API key management system",
+    "Major data quality + UI overhaul": "I overhauled the data quality engine and user interface",
+    "Real scraping pipeline, dataset export": "I built the initial real-time scraping pipeline and dataset export features",
+    "Production backend": "I set up the production backend, validation, and CI/CD pipelines",
+    "Frontend polish": "I polished the frontend layout and added comprehensive theme support",
+    "Complete UI overhaul": "I designed and built the complete user interface from scratch",
+    "OAuth schema + debug": "I fixed the OAuth schema to match the authentication provider contract",
+    "Google OAuth - add trustHost": "I configured Google OAuth with secure host settings",
+    "OAuth server error - conditionally register": "I resolved an OAuth server error by conditionally registering providers",
+    "lightweight middleware": "I wrote a lightweight middleware to stay under edge function limits",
+    "switch database provider to PostgreSQL": "I prepared the database provider for production deployment",
+    "professional README": "I wrote the initial professional documentation and architecture reference",
+    "InsightAI v2.0 - Production SaaS Upgrade": "I deployed the InsightAI v2.0 production SaaS upgrade",
+    "InsightAI v1.0 - AI-Powered Data Intelligence Platform": "I initialized the InsightAI v1.0 platform repository"
+}
+
+msg = sys.stdin.read().strip()
+for old, new in mappings.items():
+    if old.lower() in msg.lower():
+        print(new)
+        sys.exit(0)
+print(msg)
