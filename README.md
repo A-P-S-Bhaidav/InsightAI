@@ -14,7 +14,7 @@
 [![Groq](https://img.shields.io/badge/Groq-Fallback-F55036?style=for-the-badge&logo=groq&logoColor=white)](https://groq.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge)](LICENSE)
 
-[Live Demo](https://insightai.vercel.app) · [Report Bug](https://github.com/A-P-S-Bhaidav/InsightAI/issues) · [Request Feature](https://github.com/A-P-S-Bhaidav/InsightAI/issues)
+[Live Demo](https://insight-ai-two-phi.vercel.app) · [Report Bug](https://github.com/A-P-S-Bhaidav/InsightAI/issues) · [Request Feature](https://github.com/A-P-S-Bhaidav/InsightAI/issues)
 
 </div>
 
@@ -227,9 +227,13 @@ cd InsightAI
 # Install
 npm install
 
-# Configure
-cp .env.example .env
-# Edit .env with your API keys
+# Configure Environment
+# Create a .env file in the root directory and add:
+# DATABASE_URL="postgresql://user:password@hostname/dbname"
+# GEMINI_API_KEY="your-gemini-api-key"
+# GROQ_API_KEY="your-groq-api-key"
+# AUTH_SECRET="generate-a-random-secret-here"
+# NEXTAUTH_URL="http://localhost:3000"
 
 # Database
 npx prisma generate
@@ -251,9 +255,11 @@ docker-compose up -d
 
 ## Environment Variables
 
+For maximum security, this repository does not include a `.env.example` file. You must manually create a `.env` file at the root of the project with the following keys:
+
 | Variable | Required | Description |
 |:---------|:---------|:------------|
-| `DATABASE_URL` | ✅ | Database connection string |
+| `DATABASE_URL` | ✅ | Database connection string (SQLite or PostgreSQL) |
 | `GEMINI_API_KEY` | ✅ | Google Gemini API key ([get one](https://aistudio.google.com/apikey)) |
 | `GROQ_API_KEY` | ✅ | Groq API key ([get one](https://console.groq.com/keys)) |
 | `AUTH_SECRET` | ✅ | Random secret (`openssl rand -base64 32`) |
