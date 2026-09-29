@@ -11,7 +11,6 @@ import {
   BarChart,
   CheckCircle,
   Database,
-  Database,
   ListTodo,
   Menu,
   X
