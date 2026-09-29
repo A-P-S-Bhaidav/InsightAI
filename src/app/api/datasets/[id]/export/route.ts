@@ -21,7 +21,7 @@ export async function GET(
     });
 
     const parsedData = dataPoints.map(dp => {
-      const data = dp.data ? JSON.parse(dp.data) : {};
+      const data = (dp.data as object) || {};
       return {
         ...data,
         _confidence: dp.confidence,

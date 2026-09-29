@@ -35,14 +35,14 @@ export async function GET(
 
     const dataPoints = rawDbDataPoints.map(dp => ({
       ...dp,
-      data: dp.data ? JSON.parse(dp.data) : null
+      data: dp.data as Record<string, unknown> | null
     }));
 
     // Compute basic statistics on a sample (or all if small enough)
     const allPoints = await prisma.dataPoint.findMany({ where: { datasetId: id } });
     const parsedAllPoints = allPoints.map(p => ({
       ...p,
-      data: (p.data ? JSON.parse(p.data) : {}) as Record<string, unknown>
+      data: (p.data as Record<string, unknown>) || {}
     }));
     
     const stats: Record<string, { min?: number, max?: number, uniqueValues: number, type: string }> = {};

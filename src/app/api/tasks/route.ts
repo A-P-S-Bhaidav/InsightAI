@@ -4,6 +4,7 @@ import prisma from '@/lib/db';
 import { Prisma } from '@prisma/client';
 import { createTaskSchema } from '@/lib/validations';
 import { auth } from '@/lib/auth';
+import { sanitizePrompt } from '@/lib/ai/sanitize';
 
 export async function GET(request: NextRequest) {
   try {
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest) {
     const task = await prisma.task.create({
       data: {
         title: sanitizeInput(title),
-        prompt: sanitizeInput(prompt),
+        prompt: sanitizePrompt(prompt),
         priority,
         tags: JSON.stringify(tags),
         userId,

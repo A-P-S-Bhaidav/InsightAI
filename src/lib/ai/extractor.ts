@@ -1,4 +1,5 @@
 import { generateAIContent } from './client';
+import fuzzysort from 'fuzzysort';
 
 /**
  * Extract structured data records from raw web page text using LLM
@@ -102,26 +103,7 @@ Example response format:
   }
 }
 
-/**
- * Calculate Levenshtein distance between two strings
- */
-function levenshteinDistance(a: string, b: string): number {
-  const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
-  for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
-  for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
 
-  for (let i = 1; i <= a.length; i++) {
-    for (let j = 1; j <= b.length; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      matrix[i][j] = Math.min(
-        matrix[i - 1][j] + 1,
-        matrix[i][j - 1] + 1,
-        matrix[i - 1][j - 1] + cost
-      );
-    }
-  }
-  return matrix[a.length][b.length];
-}
 
 /**
  * Merge and deduplicate extracted records from multiple sources using Fuzzy Matching
@@ -142,35 +124,46 @@ export function mergeRecords(
     if (!identityString) continue;
 
     let isDuplicate = false;
-    for (const existing of merged) {
-      const existingIdentity = columns
-        .map(col => (existing[col] || '').toLowerCase().trim())
-        .filter(v => v.length > 0)
-        .join(' ');
-        
-      if (!existingIdentity) continue;
+    
+    if (merged.length > 0) {
+      // Create search targets from merged array
+      const targets = merged.map((m, index) => {
+        return {
+          id: index,
+          text: columns
+            .map(col => (m[col] || '').toLowerCase().trim())
+            .filter(v => v.length > 0)
+            .join(' ')
+        };
+      });
 
-      // Calculate fuzzy match similarity
-      const distance = levenshteinDistance(identityString, existingIdentity);
-      const maxLength = Math.max(identityString.length, existingIdentity.length);
-      const similarity = 1 - (distance / maxLength);
-
-      // If similarity > 85%, consider it a duplicate and merge missing fields
-      if (similarity > 0.85) {
-        isDuplicate = true;
+      // Search using fuzzysort
+      const results = fuzzysort.go(identityString, targets, { key: 'text', limit: 1 });
+      
+      if (results.length > 0) {
+        // fuzzysort score is negative, closer to 0 is better.
+        // We'll use a threshold to determine similarity
+        const score = results[0].score;
+        const matchedObj = results[0].obj;
         
-        // Merge missing fields into the existing record
-        for (const col of columns) {
-          if (!existing[col] && record[col]) {
-            existing[col] = record[col];
+        // Typical fuzzysort scores for very similar text are close to 0 (e.g. -100 to 0)
+        // If it's a very good match:
+        if (score > -150) {
+          isDuplicate = true;
+          const existing = merged[matchedObj.id];
+          
+          // Merge missing fields into the existing record
+          for (const col of columns) {
+            if (!existing[col] && record[col]) {
+              existing[col] = record[col];
+            }
+          }
+          
+          // Prefer the record with the most evidence
+          if (!existing['_evidenceSnippet'] && record['_evidence']) {
+            existing['_evidenceSnippet'] = record['_evidence'];
           }
         }
-        
-        // Prefer the record with the most evidence
-        if (!existing['_evidenceSnippet'] && record['_evidence']) {
-          existing['_evidenceSnippet'] = record['_evidence'];
-        }
-        break;
       }
     }
 

@@ -132,9 +132,9 @@ export async function POST(
     const dataset = workflow?.datasets[0];
     if (!workflow || !dataset) throw new Error('Workflow/Dataset missing');
     
-    const config = JSON.parse(workflow.config || '{}');
+    const config = (workflow.config as Record<string, any>) || {};
     const parsedPrompt = config.parsedPrompt;
-    const columns = JSON.parse(dataset.schema || '[]');
+    const columns = (dataset.schema as string[]) || [];
 
     // ACTION: PLAN
     if (action === 'plan') {
@@ -178,7 +178,7 @@ export async function POST(
 
       // Fetch existing records to exclude them from generation
       const points = await prisma.dataPoint.findMany({ where: { datasetId: dataset.id, sourceId: null } });
-      const existingData = points.map(p => JSON.parse(p.data));
+      const existingData = points.map(p => p.data as any);
 
       const llmData = await generateDataFromLLMKnowledge(parsedPrompt, columns, existingData);
       
@@ -343,7 +343,7 @@ export async function POST(
       // Load all points, deduplicate, compute score
       const points = await prisma.dataPoint.findMany({ where: { datasetId: dataset.id } });
       const rawRecords = points.map(p => {
-        const data = JSON.parse(p.data);
+        const data = (p.data as Record<string, any>) || {};
         data._sourceId = p.sourceId; // Inject sourceId to preserve it through merge
         return data;
       });

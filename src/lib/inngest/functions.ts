@@ -3,6 +3,7 @@ import prisma from "@/lib/db";
 import { parsePrompt } from "@/lib/ai/prompt-parser";
 import { runAgenticRAG } from "@/lib/ai/agent";
 import { validateData } from "@/lib/ai/data-validator";
+import { generateWorkflow } from "@/lib/ai/workflow-generator";
 import { sendTaskCompletedEmail, sendTaskFailedEmail } from "@/lib/email";
 
 export const runAgenticTask = inngest.createFunction(
@@ -27,31 +28,32 @@ export const runAgenticTask = inngest.createFunction(
       });
 
       // 2. Setup Workflow DB tracking
-      const workflow = await step.run("setup-workflow", async () => {
-        const stepNames = [
-          { name: 'Research Planning', type: 'plan', order: 1 },
-          { name: 'Web Search & Discovery', type: 'scrape', order: 2 },
-          { name: 'Page Retrieval & Extraction', type: 'transform', order: 3 },
-          { name: 'Validation & Deduplication', type: 'validate', order: 4 },
-          { name: 'Dataset Export', type: 'export', order: 5 },
-        ];
+      const workflowPlan = await step.run("generate-workflow-plan", async () => {
+        return generateWorkflow(parsedPrompt);
+      });
 
+      const workflow = await step.run("setup-workflow", async () => {
         const w = await prisma.workflow.create({
           data: {
             taskId: task.id,
-            name: `Agentic RAG: ${parsedPrompt.dataType}`,
-            description: `AI-powered research pipeline for: ${parsedPrompt.description.slice(0, 100)}`,
+            name: workflowPlan.name || `Agentic RAG: ${parsedPrompt.dataType}`,
+            description: workflowPlan.description || `AI-powered research pipeline for: ${parsedPrompt.description.slice(0, 100)}`,
             status: 'running',
-            totalSteps: stepNames.length,
+            totalSteps: workflowPlan.steps.length,
             progress: 0,
             startedAt: new Date(),
           },
         });
 
-        for (const s of stepNames) {
+        for (const s of workflowPlan.steps) {
           await prisma.workflowStep.create({
             data: {
-              workflowId: w.id, name: s.name, type: s.type, order: s.order, status: 'pending',
+              workflowId: w.id, 
+              name: s.name, 
+              type: s.type, 
+              order: s.order, 
+              config: s.dependsOn ? { dependsOn: s.dependsOn } : {},
+              status: 'pending',
             },
           });
         }

@@ -9,15 +9,24 @@ export interface SearchResult {
 
 /**
  * Web search with multiple fallback strategies:
- * 1. Serper.dev (Google Search API) — if SERPER_API_KEY is set
- * 2. DuckDuckGo JSON API (no key needed)
- * 3. DuckDuckGo HTML scraping (last resort)
+ * 1. Firecrawl (Enterprise Scraping API) — if FIRECRAWL_API_KEY is set
+ * 2. Serper.dev (Google Search API) — if SERPER_API_KEY is set
+ * 3. DuckDuckGo JSON API (no key needed)
  * 4. Synthetic fallback from known directories
  */
 export async function webSearch(query: string, maxResults: number = 8): Promise<SearchResult[]> {
   console.log(`[WebSearch] Searching: "${query}"`);
 
-  // Strategy 1: Serper.dev (most reliable)
+  // Strategy 1: Firecrawl API (Enterprise grade)
+  if (process.env.FIRECRAWL_API_KEY) {
+    const results = await searchViaFirecrawl(query, maxResults);
+    if (results.length > 0) {
+      console.log(`[WebSearch] Firecrawl returned ${results.length} results`);
+      return results;
+    }
+  }
+
+  // Strategy 2: Serper.dev (Google Search)
   if (process.env.SERPER_API_KEY) {
     const results = await searchViaSerper(query, maxResults);
     if (results.length > 0) {
@@ -26,18 +35,11 @@ export async function webSearch(query: string, maxResults: number = 8): Promise<
     }
   }
 
-  // Strategy 2: DuckDuckGo JSON (instant answers)
+  // Strategy 3: DuckDuckGo JSON (instant answers)
   const ddgJsonResults = await searchViaDDGJson(query, maxResults);
   if (ddgJsonResults.length > 0) {
     console.log(`[WebSearch] DDG JSON returned ${ddgJsonResults.length} results`);
     return ddgJsonResults;
-  }
-
-  // Strategy 3: DuckDuckGo HTML
-  const ddgHtmlResults = await searchViaDDGHtml(query, maxResults);
-  if (ddgHtmlResults.length > 0) {
-    console.log(`[WebSearch] DDG HTML returned ${ddgHtmlResults.length} results`);
-    return ddgHtmlResults;
   }
 
   // Strategy 4: Generate synthetic search URLs from known data sources
@@ -80,6 +82,45 @@ async function searchViaSerper(query: string, maxResults: number): Promise<Searc
     });
   } catch (error) {
     console.error('[WebSearch] Serper search failed:', error);
+    return [];
+  }
+}
+
+/**
+ * Firecrawl API — Enterprise Headless Scraping & Search
+ */
+async function searchViaFirecrawl(query: string, maxResults: number): Promise<SearchResult[]> {
+  try {
+    const response = await fetch('https://api.firecrawl.dev/v1/search', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query, limit: maxResults }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) {
+      console.warn(`[WebSearch] Firecrawl returned ${response.status}`);
+      return [];
+    }
+
+    const data = await response.json();
+    if (!data.success || !data.data) return [];
+
+    return data.data.map((item: any) => {
+      let domain = '';
+      try { domain = new URL(item.url).hostname; } catch { /* */ }
+      return {
+        title: item.title || '',
+        url: item.url || '',
+        snippet: item.description || item.content?.substring(0, 200) || '',
+        domain,
+      };
+    });
+  } catch (error) {
+    console.error('[WebSearch] Firecrawl search failed:', error);
     return [];
   }
 }
@@ -157,63 +198,7 @@ async function searchViaDDGJson(query: string, maxResults: number): Promise<Sear
   }
 }
 
-/**
- * DuckDuckGo HTML scraping (fallback)
- */
-async function searchViaDDGHtml(query: string, maxResults: number): Promise<SearchResult[]> {
-  const results: SearchResult[] = [];
 
-  try {
-    const response = await fetch(`https://html.duckduckgo.com/html/`, {
-      method: 'POST',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-      body: `q=${encodeURIComponent(query)}`,
-      signal: AbortSignal.timeout(10000),
-    });
-
-    if (!response.ok) {
-      console.warn(`[WebSearch] DDG HTML returned ${response.status}`);
-      return results;
-    }
-
-    const html = await response.text();
-    const $ = cheerio.load(html);
-
-    $('.result').each((i, el) => {
-      if (i >= maxResults) return false;
-      const titleEl = $(el).find('.result__title a');
-      const snippetEl = $(el).find('.result__snippet');
-      const rawUrl = titleEl.attr('href') || '';
-
-      // DuckDuckGo wraps URLs — extract the actual URL
-      let url = rawUrl;
-      try {
-        const match = rawUrl.match(/uddg=([^&]+)/);
-        if (match) url = decodeURIComponent(match[1]);
-      } catch { /* keep raw */ }
-
-      if (url && !url.includes('duckduckgo.com') && url.startsWith('http')) {
-        let domain = '';
-        try { domain = new URL(url).hostname; } catch { /* */ }
-        results.push({
-          title: titleEl.text().trim(),
-          url,
-          snippet: snippetEl.text().trim(),
-          domain,
-        });
-      }
-    });
-  } catch (error) {
-    console.error('[WebSearch] DDG HTML search failed:', error);
-  }
-
-  return results;
-}
 
 /**
  * Generate synthetic search results from well-known directories
@@ -284,34 +269,58 @@ export async function fetchPageContent(url: string): Promise<{ text: string; htm
       console.warn(`[WebSearch] Plain fetch failed for ${url}:`, fetchError);
     }
 
-    // If plain fetch failed or returned very little content, try Browserless
-    if ((!html || html.length < 500) && process.env.BROWSERLESS_API_KEY) {
-      console.log(`[WebSearch] Trying Browserless for ${url}`);
-      try {
-        // Use Browserless REST API (simpler and more reliable than WebSocket)
-        const browserlessUrl = `https://chrome.browserless.io/content?token=${process.env.BROWSERLESS_API_KEY}`;
-        const response = await fetch(browserlessUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            url,
-            waitFor: 2000,
-            gotoOptions: { waitUntil: 'domcontentloaded', timeout: 12000 },
-            rejectResourceTypes: ['image', 'stylesheet', 'font', 'media'],
-          }),
-          signal: AbortSignal.timeout(15000),
-        });
+      // If plain fetch failed or returned very little content, try Firecrawl / Browserless
+      if ((!html || html.length < 500)) {
+        if (process.env.FIRECRAWL_API_KEY) {
+          console.log(`[WebSearch] Trying Firecrawl scrape for ${url}`);
+          try {
+            const fcResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ url, formats: ['html'] }),
+              signal: AbortSignal.timeout(20000),
+            });
+            if (fcResponse.ok) {
+              const fcData = await fcResponse.json();
+              if (fcData.success && fcData.data?.html) {
+                html = fcData.data.html;
+                console.log(`[WebSearch] Firecrawl succeeded for ${url} (${html.length} bytes)`);
+              }
+            }
+          } catch (fcError) {
+            console.warn(`[WebSearch] Firecrawl failed for ${url}:`, fcError);
+          }
+        } else if (process.env.BROWSERLESS_API_KEY) {
+          console.log(`[WebSearch] Trying Browserless for ${url}`);
+          try {
+            // Use Browserless REST API (simpler and more reliable than WebSocket)
+            const browserlessUrl = `https://chrome.browserless.io/content?token=${process.env.BROWSERLESS_API_KEY}`;
+            const response = await fetch(browserlessUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                url,
+                waitFor: 2000,
+                gotoOptions: { waitUntil: 'domcontentloaded', timeout: 12000 },
+                rejectResourceTypes: ['image', 'stylesheet', 'font', 'media'],
+              }),
+              signal: AbortSignal.timeout(15000),
+            });
 
-        if (response.ok) {
-          html = await response.text();
-          console.log(`[WebSearch] Browserless succeeded for ${url} (${html.length} bytes)`);
-        } else {
-          console.warn(`[WebSearch] Browserless returned ${response.status} for ${url}`);
+            if (response.ok) {
+              html = await response.text();
+              console.log(`[WebSearch] Browserless succeeded for ${url} (${html.length} bytes)`);
+            } else {
+              console.warn(`[WebSearch] Browserless returned ${response.status} for ${url}`);
+            }
+          } catch (browserError) {
+            console.warn(`[WebSearch] Browserless failed for ${url}:`, browserError);
+          }
         }
-      } catch (browserError) {
-        console.warn(`[WebSearch] Browserless failed for ${url}:`, browserError);
       }
-    }
 
     if (!html || html.length < 100) {
       console.warn(`[WebSearch] No usable content from ${url}`);

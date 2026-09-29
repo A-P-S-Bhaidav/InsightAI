@@ -6,6 +6,7 @@ export interface WorkflowStepPlan {
   type: 'scrape' | 'transform' | 'validate' | 'deduplicate' | 'export';
   config: Record<string, unknown>;
   order: number;
+  dependsOn?: string[];
 }
 
 export interface WorkflowPlan {
@@ -18,16 +19,18 @@ export async function generateWorkflow(parsed: ParsedPrompt): Promise<WorkflowPl
   const systemInstruction = `
     You are an expert data engineering AI. Generate a multi-step data collection workflow based on the parsed requirements.
     The workflow MUST include steps: scrape → transform → validate → deduplicate → export.
+    You must output a Directed Acyclic Graph (DAG) by specifying 'dependsOn' arrays for steps that rely on previous steps.
     Return ONLY a JSON object conforming to the following structure:
     {
       "name": "string (workflow name)",
       "description": "string (workflow description)",
       "steps": [
         {
-          "name": "string",
+          "name": "string (unique identifier for step)",
           "type": "scrape | transform | validate | deduplicate | export",
           "config": {},
-          "order": number
+          "order": number,
+          "dependsOn": ["array of previous step names this step depends on"]
         }
       ]
     }
@@ -54,30 +57,35 @@ function generateFallbackWorkflow(parsed: ParsedPrompt): WorkflowPlan {
         type: 'scrape',
         config: { sources: parsed.sources, keywords: parsed.keywords },
         order: 1,
+        dependsOn: [],
       },
       {
         name: 'Data Transformation',
         type: 'transform',
         config: { format: 'standard' },
         order: 2,
+        dependsOn: ['Data Collection'],
       },
       {
         name: 'Data Validation',
         type: 'validate',
         config: { strict: false },
         order: 3,
+        dependsOn: ['Data Transformation'],
       },
       {
         name: 'Deduplication',
         type: 'deduplicate',
         config: { fields: ['id'] },
         order: 4,
+        dependsOn: ['Data Validation'],
       },
       {
         name: 'Data Export',
         type: 'export',
         config: { format: parsed.outputFormat },
         order: 5,
+        dependsOn: ['Deduplication'],
       },
     ],
   };

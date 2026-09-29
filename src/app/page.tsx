@@ -40,20 +40,20 @@ export default function LandingPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-main)', color: 'var(--text-primary)' }}>
+    <div className="landing-container">
       {/* Navigation */}
-      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem 2rem', width: '100%', margin: '0 auto', position: 'relative', zIndex: 100 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Brain style={{ color: 'var(--color-primary)', width: '32px', height: '32px' }} />
-          <span style={{ fontWeight: 'bold', fontSize: '1.25rem', letterSpacing: '-0.025em' }}>InsightAI</span>
+      <nav className="landing-nav">
+        <div className="landing-nav-logo">
+          <Brain className="landing-nav-logo-icon" />
+          <span className="landing-nav-logo-text">InsightAI</span>
         </div>
         
         {/* Desktop Nav */}
-        <div className="hidden-mobile" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <a href="#features" style={{ color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s', fontWeight: 500 }}>Features</a>
-          <a href="#how-it-works" style={{ color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s', fontWeight: 500 }}>How It Works</a>
-          <div style={{ width: '1px', height: '24px', backgroundColor: 'var(--border-color)' }}></div>
-          <Link href="/login" style={{ color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s', fontWeight: 500 }}>
+        <div className="hidden-mobile landing-nav-desktop">
+          <a href="#features" className="landing-nav-link">Features</a>
+          <a href="#how-it-works" className="landing-nav-link">How It Works</a>
+          <div className="landing-nav-divider"></div>
+          <Link href="/login" className="landing-nav-link">
             Log In
           </Link>
           <Link href="/signup" className="btn btn-primary">
@@ -63,9 +63,8 @@ export default function LandingPage() {
 
         {/* Mobile Hamburger Toggle */}
         <button 
-          className="mobile-only-flex" 
+          className="mobile-only-flex landing-mobile-toggle" 
           onClick={() => setIsMobileMenuOpen(true)}
-          style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '0.5rem' }}
         >
           <Menu size={28} />
         </button>
@@ -73,30 +72,30 @@ export default function LandingPage() {
 
       {/* Mobile Overlay Menu */}
       {isMobileMenuOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'var(--bg-main)', zIndex: 999, display: 'flex', flexDirection: 'column', padding: '1.5rem 2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Brain style={{ color: 'var(--color-primary)', width: '32px', height: '32px' }} />
-              <span style={{ fontWeight: 'bold', fontSize: '1.25rem', letterSpacing: '-0.025em' }}>InsightAI</span>
+        <div className="landing-mobile-menu">
+          <div className="landing-mobile-menu-header">
+            <div className="landing-nav-logo">
+              <Brain className="landing-nav-logo-icon" />
+              <span className="landing-nav-logo-text">InsightAI</span>
             </div>
             <button 
               onClick={() => setIsMobileMenuOpen(false)}
-              style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '0.5rem' }}
+              className="landing-mobile-toggle"
             >
               <X size={28} />
             </button>
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', width: '100%', fontSize: '1.25rem', fontWeight: 500, borderTop: '1px solid var(--border-color)' }}>
-            <a href="#features" onClick={() => setIsMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', borderBottom: '1px solid var(--border-color)', padding: '1.5rem 0', textAlign: 'center', width: '100%', display: 'block' }}>Features</a>
-            <a href="#how-it-works" onClick={() => setIsMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', borderBottom: '1px solid var(--border-color)', padding: '1.5rem 0', textAlign: 'center', width: '100%', display: 'block' }}>How It Works</a>
-            <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', borderBottom: '1px solid var(--border-color)', padding: '1.5rem 0', textAlign: 'center', width: '100%', display: 'block' }}>
+          <div className="landing-mobile-menu-links">
+            <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="landing-mobile-nav-link">Features</a>
+            <a href="#how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="landing-mobile-nav-link">How It Works</a>
+            <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} className="landing-mobile-nav-link">
               Log In
             </Link>
           </div>
           
-          <div style={{ marginTop: 'auto', paddingBottom: '2rem' }}>
-            <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)} className="btn btn-primary" style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '1rem' }}>
+          <div className="landing-mobile-menu-footer">
+            <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)} className="btn btn-primary landing-mobile-menu-btn">
               Get Started Free
             </Link>
           </div>
@@ -104,18 +103,18 @@ export default function LandingPage() {
       )}
 
       {/* Section 1: Hero */}
-      <section className="hero-gradient" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', paddingTop: '8rem', paddingBottom: '5rem', paddingLeft: '1rem', paddingRight: '1rem', minHeight: '80vh' }}>
-        <div className="reveal" style={{ position: 'relative', zIndex: 10, maxWidth: '1400px', margin: '0 auto' }}>
-          <h1 style={{ fontSize: 'clamp(3rem, 6vw, 5.5rem)', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1.1, marginBottom: '2rem' }}>
+      <section className="hero-gradient landing-hero-section">
+        <div className="reveal landing-hero-content">
+          <h1 className="landing-hero-title">
             Turn Natural Language into{' '}
-            <span style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <span className="landing-hero-title-highlight">
               Structured Data
             </span>
           </h1>
-          <p style={{ fontSize: 'clamp(1.125rem, 2vw, 1.5rem)', color: 'var(--text-secondary)', maxWidth: '800px', margin: '0 auto 2.5rem' }}>
+          <p className="landing-hero-subtitle">
             InsightAI uses AI to collect, validate, and structure data from the web — all from a simple text prompt.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+          <div className="landing-hero-actions">
             <Link href="/signup" className="btn btn-primary btn-lg">
               Get Started Free
             </Link>
@@ -126,26 +125,26 @@ export default function LandingPage() {
         </div>
 
         {/* Hero Illustration Mockup */}
-        <div className="reveal" style={{ marginTop: '5rem', width: '100%', maxWidth: '1400px', margin: '5rem auto 0' }}>
-          <div className="dashboard-mockup" style={{ padding: '4px' }}>
+        <div className="reveal landing-hero-mockup-wrapper">
+          <div className="dashboard-mockup landing-dashboard-mockup-padded">
             <div className="dashboard-mockup-header">
               <div className="mockup-dot red"></div>
               <div className="mockup-dot yellow"></div>
               <div className="mockup-dot green"></div>
             </div>
-            <div style={{ backgroundColor: 'var(--bg-surface)', padding: '2rem', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px', borderTop: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
-                <div style={{ flex: '2 1 400px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ height: '2rem', width: '33%', backgroundColor: 'var(--bg-surface-elevated)', borderRadius: '4px' }} className="animate-pulse"></div>
-                  <div style={{ height: '1rem', width: '100%', backgroundColor: 'var(--bg-surface-elevated)', borderRadius: '4px' }} className="animate-pulse delay-1"></div>
-                  <div style={{ height: '1rem', width: '83%', backgroundColor: 'var(--bg-surface-elevated)', borderRadius: '4px' }} className="animate-pulse delay-2"></div>
-                  <div style={{ height: '8rem', width: '100%', backgroundColor: 'var(--bg-surface-elevated)', borderRadius: '8px', marginTop: '1.5rem', border: '1px solid var(--border-color)', position: 'relative', overflow: 'hidden' }}>
-                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, transparent, var(--color-primary), transparent)', opacity: 0.1 }} className="animate-pulse"></div>
+            <div className="landing-dashboard-mockup-body">
+              <div className="landing-dashboard-mockup-grid">
+                <div className="landing-mockup-col-main">
+                  <div className="animate-pulse landing-pulse-bar-1"></div>
+                  <div className="animate-pulse delay-1 landing-pulse-bar-2"></div>
+                  <div className="animate-pulse delay-2 landing-pulse-bar-3"></div>
+                  <div className="landing-pulse-box">
+                     <div className="animate-pulse landing-pulse-gradient"></div>
                   </div>
                 </div>
-                <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ height: '6rem', width: '100%', backgroundColor: 'var(--bg-surface-elevated)', borderRadius: '8px', border: '1px solid var(--border-color)' }}></div>
-                  <div style={{ height: '6rem', width: '100%', backgroundColor: 'var(--bg-surface-elevated)', borderRadius: '8px', border: '1px solid var(--border-color)' }}></div>
+                <div className="landing-mockup-col-side">
+                  <div className="landing-mockup-side-box"></div>
+                  <div className="landing-mockup-side-box"></div>
                 </div>
               </div>
             </div>
@@ -154,23 +153,23 @@ export default function LandingPage() {
       </section>
 
       {/* Section 2: Trusted By / Stats Bar */}
-      <section className="reveal" style={{ padding: '3rem 0', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-surface)' }}>
-        <div style={{ width: '100%', margin: '0 auto', padding: '0 2rem', textAlign: 'center' }}>
-          <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.875rem', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '2rem' }}>
+      <section className="reveal landing-stats-section">
+        <div className="landing-stats-container">
+          <p className="landing-stats-title">
             Trusted by 1,000+ data teams worldwide
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '3rem' }}>
+          <div className="landing-stats-grid">
             <div>
-              <h3 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>50K+</h3>
-              <p style={{ color: 'var(--text-muted)' }}>Tasks Completed</p>
+              <h3 className="landing-stat-value">50K+</h3>
+              <p className="landing-stat-label">Tasks Completed</p>
             </div>
             <div>
-              <h3 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>99.9%</h3>
-              <p style={{ color: 'var(--text-muted)' }}>Uptime</p>
+              <h3 className="landing-stat-value">99.9%</h3>
+              <p className="landing-stat-label">Uptime</p>
             </div>
             <div>
-              <h3 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>10M+</h3>
-              <p style={{ color: 'var(--text-muted)' }}>Data Points</p>
+              <h3 className="landing-stat-value">10M+</h3>
+              <p className="landing-stat-label">Data Points</p>
             </div>
           </div>
         </div>
@@ -178,14 +177,14 @@ export default function LandingPage() {
 
       {/* Section 3: Features Grid */}
       <section id="features" className="section-container">
-        <div className="reveal" style={{ textAlign: 'center', marginBottom: '4rem' }}>
-          <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Everything you need to master your data</h2>
-          <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>
+        <div className="reveal landing-section-header">
+          <h2 className="landing-section-title">Everything you need to master your data</h2>
+          <p className="landing-section-subtitle">
             Powerful tools wrapped in a simple, intuitive interface.
           </p>
         </div>
         
-        <div className="grid-3" style={{ gap: '2rem' }}>
+        <div className="grid-3 landing-features-grid">
           {[
             { icon: Brain, title: 'AI-Powered Parsing', desc: 'Describe your data needs in plain English' },
             { icon: GitBranch, title: 'Smart Workflows', desc: 'Automated multi-step data pipelines' },
@@ -194,107 +193,107 @@ export default function LandingPage() {
             { icon: Download, title: 'Export Anywhere', desc: 'CSV, JSON, PDF with one click' },
             { icon: BarChart, title: 'Real-time Dashboard', desc: 'Track progress and visualize results' },
           ].map((feature, i) => (
-            <div key={i} className="card reveal" style={{ padding: '1.5rem', transitionDelay: `${i * 100}ms` }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '8px', backgroundColor: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                <feature.icon style={{ width: '24px', height: '24px', color: 'var(--color-primary)' }} />
+            <div key={i} className={`card reveal landing-feature-card delay-${i * 100}`}>
+              <div className="landing-feature-icon-wrapper">
+                <feature.icon className="landing-feature-icon" />
               </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>{feature.title}</h3>
-              <p style={{ color: 'var(--text-secondary)' }}>{feature.desc}</p>
+              <h3 className="landing-feature-title">{feature.title}</h3>
+              <p className="landing-feature-desc">{feature.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Section: Why InsightAI vs LLMs */}
-      <section className="section-container" style={{ backgroundColor: 'var(--bg-main)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
-        <div className="reveal" style={{ textAlign: 'center', marginBottom: '4rem' }}>
-          <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Why InsightAI vs. Standard LLMs?</h2>
-          <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', maxWidth: '800px', margin: '0 auto' }}>
+      <section className="section-container landing-comparison-section">
+        <div className="reveal landing-section-header">
+          <h2 className="landing-section-title">Why InsightAI vs. Standard LLMs?</h2>
+          <p className="landing-section-subtitle-wide">
             ChatGPT is a conversational tool. InsightAI is an autonomous Data Engineering Pipeline.
           </p>
         </div>
         
-        <div className="grid-2" style={{ gap: '2rem', maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))' }}>
-          <div className="card reveal" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem', borderTop: '4px solid #ef4444' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>The LLM Problem</h3>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem', color: 'var(--text-secondary)' }}>
-              <li><strong style={{ color: 'var(--text-primary)' }}>Hallucinations:</strong> LLMs guess data and generate inconsistent formats.</li>
-              <li><strong style={{ color: 'var(--text-primary)' }}>Poor Browsing:</strong> They fail on anti-bot protections and don't dig deep.</li>
-              <li><strong style={{ color: 'var(--text-primary)' }}>No Verifiability:</strong> You can't verify where the data came from easily.</li>
-              <li><strong style={{ color: 'var(--text-primary)' }}>Context Limits:</strong> Long tasks cause them to repeat or forget data.</li>
+        <div className="grid-2 landing-comparison-grid">
+          <div className="card reveal landing-comparison-card-bad">
+            <h3 className="landing-comparison-title">The LLM Problem</h3>
+            <ul className="landing-comparison-list">
+              <li><strong>Hallucinations:</strong> LLMs guess data and generate inconsistent formats.</li>
+              <li><strong>Poor Browsing:</strong> They fail on anti-bot protections and don't dig deep.</li>
+              <li><strong>No Verifiability:</strong> You can't verify where the data came from easily.</li>
+              <li><strong>Context Limits:</strong> Long tasks cause them to repeat or forget data.</li>
             </ul>
           </div>
           
-          <div className="card reveal" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem', borderTop: '4px solid var(--color-success)' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>The InsightAI Solution</h3>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem', color: 'var(--text-secondary)' }}>
-              <li><strong style={{ color: 'var(--text-primary)' }}>Deterministic Extraction:</strong> We force strict schemas using Zod. No guessing.</li>
-              <li><strong style={{ color: 'var(--text-primary)' }}>Deep Web Scraping:</strong> Autonomous agents navigate past blockers in parallel.</li>
-              <li><strong style={{ color: 'var(--text-primary)' }}>Traceable Evidence:</strong> Every row gets an `evidenceSnippet` with a source URL.</li>
-              <li><strong style={{ color: 'var(--text-primary)' }}>Fuzzy Deduplication:</strong> We match rows at the database level to ensure zero duplicates.</li>
+          <div className="card reveal landing-comparison-card-good">
+            <h3 className="landing-comparison-title">The InsightAI Solution</h3>
+            <ul className="landing-comparison-list">
+              <li><strong>Deterministic Extraction:</strong> We force strict schemas using Zod. No guessing.</li>
+              <li><strong>Deep Web Scraping:</strong> Autonomous agents navigate past blockers in parallel.</li>
+              <li><strong>Traceable Evidence:</strong> Every row gets an `evidenceSnippet` with a source URL.</li>
+              <li><strong>Fuzzy Deduplication:</strong> We match rows at the database level to ensure zero duplicates.</li>
             </ul>
           </div>
         </div>
       </section>
 
       {/* Section 4: How It Works */}
-      <section id="how-it-works" style={{ backgroundColor: 'var(--bg-surface)', overflow: 'hidden' }}>
+      <section id="how-it-works" className="landing-how-it-works-section">
         <div className="section-container">
-          <div className="reveal" style={{ textAlign: 'center', marginBottom: '5rem' }}>
-            <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>How It Works</h2>
-            <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)' }}>Three simple steps to structured data.</p>
+          <div className="reveal landing-how-it-works-header">
+            <h2 className="landing-section-title">How It Works</h2>
+            <p className="landing-section-subtitle">Three simple steps to structured data.</p>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6rem' }}>
+          <div className="landing-steps-container">
             {/* Step 1 */}
-            <div className="reveal-left flex-col-mobile" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '3rem' }}>
-              <div style={{ flex: '1 1 400px' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>1</div>
-                <h3 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>Describe Your Data</h3>
-                <p style={{ fontSize: '1.125rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            <div className="reveal-left flex-col-mobile landing-step-row">
+              <div className="landing-step-text">
+                <div className="landing-step-number-1">1</div>
+                <h3 className="landing-step-title">Describe Your Data</h3>
+                <p className="landing-step-desc">
                   Just type what you need. Our AI understands context, structure, and intent, converting your plain English into a robust extraction plan.
                 </p>
               </div>
-              <div style={{ flex: '1 1 400px', width: '100%' }}>
-                <div className="dashboard-mockup" style={{ padding: '1.5rem', backgroundColor: 'var(--bg-main)' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', color: 'var(--text-secondary)', alignItems: 'center' }}>
-                    <Brain style={{ width: '20px', height: '20px' }} />
-                    <span style={{ fontWeight: 500, fontSize: '0.875rem' }}>Prompt Editor</span>
+              <div className="landing-step-image">
+                <div className="dashboard-mockup landing-step-mockup">
+                  <div className="landing-step-mockup-header">
+                    <Brain className="landing-step-mockup-icon" />
+                    <span className="landing-step-mockup-title">Prompt Editor</span>
                   </div>
-                  <div style={{ padding: '1rem', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-surface)', fontSize: '0.875rem', fontFamily: 'monospace' }}>
+                  <div className="landing-step-mockup-code">
                     "Find all SaaS companies in London that raised Series A in 2023. Extract their name, website, and founder emails."
                   </div>
-                  <button className="btn btn-primary" style={{ marginTop: '1rem', width: '100%' }}>Generate Pipeline</button>
+                  <button className="btn btn-primary landing-step-mockup-btn">Generate Pipeline</button>
                 </div>
               </div>
             </div>
 
             {/* Step 2 */}
-            <div className="reveal-right flex-col-mobile" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '3rem', flexDirection: 'row-reverse' }}>
-              <div style={{ flex: '1 1 400px' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-secondary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>2</div>
-                <h3 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>AI Creates a Pipeline</h3>
-                <p style={{ fontSize: '1.125rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            <div className="reveal-right flex-col-mobile landing-step-row-reverse">
+              <div className="landing-step-text">
+                <div className="landing-step-number-2">2</div>
+                <h3 className="landing-step-title">AI Creates a Pipeline</h3>
+                <p className="landing-step-desc">
                   Watch as InsightAI automatically builds a multi-step workflow. It identifies sources, sets up scrapers, and configures validation rules on the fly.
                 </p>
               </div>
-              <div style={{ flex: '1 1 400px', width: '100%' }}>
-                <div className="dashboard-mockup" style={{ padding: '1.5rem', backgroundColor: 'var(--bg-main)' }}>
-                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', color: 'var(--text-secondary)', alignItems: 'center' }}>
-                    <GitBranch style={{ width: '20px', height: '20px' }} />
-                    <span style={{ fontWeight: 500, fontSize: '0.875rem' }}>Workflow Visualization</span>
+              <div className="landing-step-image">
+                <div className="dashboard-mockup landing-step-mockup">
+                   <div className="landing-step-mockup-header">
+                    <GitBranch className="landing-step-mockup-icon" />
+                    <span className="landing-step-mockup-title">Workflow Visualization</span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <div style={{ padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-surface)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <Globe style={{ color: 'var(--color-primary)', width: '16px', height: '16px' }} /> Source Discovery
+                  <div className="landing-workflow-container">
+                    <div className="landing-workflow-item">
+                      <Globe className="landing-workflow-icon-1" /> Source Discovery
                     </div>
-                    <div style={{ width: '2px', height: '1rem', backgroundColor: 'var(--border-color)', marginLeft: '1.5rem' }}></div>
-                    <div style={{ padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-surface)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                       <Database style={{ color: 'var(--color-secondary)', width: '16px', height: '16px' }} /> Data Extraction
+                    <div className="landing-workflow-divider"></div>
+                    <div className="landing-workflow-item">
+                       <Database className="landing-workflow-icon-2" /> Data Extraction
                     </div>
-                    <div style={{ width: '2px', height: '1rem', backgroundColor: 'var(--border-color)', marginLeft: '1.5rem' }}></div>
-                    <div style={{ padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-surface)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                       <Shield style={{ color: 'var(--color-success)', width: '16px', height: '16px' }} /> Quality Validation
+                    <div className="landing-workflow-divider"></div>
+                    <div className="landing-workflow-item">
+                       <Shield className="landing-workflow-icon-3" /> Quality Validation
                     </div>
                   </div>
                 </div>
@@ -302,24 +301,24 @@ export default function LandingPage() {
             </div>
 
             {/* Step 3 */}
-            <div className="reveal-left flex-col-mobile" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '3rem' }}>
-              <div style={{ flex: '1 1 400px' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-success)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>3</div>
-                <h3 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>Get Structured Results</h3>
-                <p style={{ fontSize: '1.125rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            <div className="reveal-left flex-col-mobile landing-step-row">
+              <div className="landing-step-text">
+                <div className="landing-step-number-3">3</div>
+                <h3 className="landing-step-title">Get Structured Results</h3>
+                <p className="landing-step-desc">
                   Your data is ready. Export it instantly as CSV, JSON, or connect it directly to your database via our API.
                 </p>
               </div>
-              <div style={{ flex: '1 1 400px', width: '100%' }}>
-                <div className="dashboard-mockup" style={{ padding: '1.5rem', backgroundColor: 'var(--bg-main)', overflowX: 'auto' }}>
-                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', color: 'var(--text-secondary)', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <ListTodo style={{ width: '20px', height: '20px' }} />
-                      <span style={{ fontWeight: 500, fontSize: '0.875rem' }}>Results Table</span>
+              <div className="landing-step-image">
+                <div className="dashboard-mockup landing-step-mockup-table">
+                   <div className="landing-step-mockup-table-header">
+                    <div className="landing-step-mockup-table-title-container">
+                      <ListTodo className="landing-step-mockup-icon" />
+                      <span className="landing-step-mockup-title">Results Table</span>
                     </div>
-                    <Download style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
+                    <Download className="landing-step-mockup-action-icon" />
                   </div>
-                  <table className="table" style={{ width: '100%', fontSize: '0.875rem' }}>
+                  <table className="table landing-results-table">
                     <thead>
                       <tr>
                         <th>Company</th>
@@ -330,17 +329,17 @@ export default function LandingPage() {
                     <tbody>
                       <tr>
                         <td>DataFlow Inc</td>
-                        <td style={{ color: 'var(--text-muted)' }}>dataflow.io</td>
+                        <td className="landing-results-table-muted">dataflow.io</td>
                         <td><span className="badge badge-success">Verified</span></td>
                       </tr>
                       <tr>
                         <td>TechSphere</td>
-                        <td style={{ color: 'var(--text-muted)' }}>techsphere.co</td>
+                        <td className="landing-results-table-muted">techsphere.co</td>
                         <td><span className="badge badge-success">Verified</span></td>
                       </tr>
                       <tr>
                         <td>CloudScale</td>
-                        <td style={{ color: 'var(--text-muted)' }}>cloudscale.ai</td>
+                        <td className="landing-results-table-muted">cloudscale.ai</td>
                         <td><span className="badge badge-success">Verified</span></td>
                       </tr>
                     </tbody>
@@ -354,82 +353,82 @@ export default function LandingPage() {
       </section>
 
       {/* Section 5: Screenshots / Dashboard Preview */}
-      <section className="reveal section-container" style={{ textAlign: 'center' }}>
-        <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>A command center for all your data operations</h2>
-        <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', marginBottom: '3rem', maxWidth: '600px', margin: '0 auto 3rem' }}>
+      <section className="reveal section-container landing-dashboard-preview-section">
+        <h2 className="landing-section-title">A command center for all your data operations</h2>
+        <p className="landing-preview-subtitle">
           Monitor tasks, analyze quality scores, and manage datasets from one powerful dashboard.
         </p>
-        <div className="dashboard-mockup" style={{ margin: '0 auto', position: 'relative', overflow: 'hidden' }}>
+        <div className="dashboard-mockup landing-preview-mockup">
           <div className="dashboard-mockup-header">
             <div className="mockup-dot red"></div>
             <div className="mockup-dot yellow"></div>
             <div className="mockup-dot green"></div>
           </div>
-          <div style={{ position: 'relative' }}>
+          <div className="landing-preview-image-container">
             <img 
                src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80" 
                alt="Dashboard Preview" 
-               style={{ width: '100%', height: 'auto', display: 'block', opacity: 0.7, filter: 'grayscale(100%) contrast(1.2)' }}
+               className="landing-preview-image"
             />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--bg-main), transparent)' }}></div>
+            <div className="landing-preview-fade"></div>
           </div>
         </div>
       </section>
 
       {/* Section 6: CTA Banner */}
-      <section className="reveal section-container" style={{ position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, var(--color-primary), var(--color-secondary))', opacity: 0.1 }}></div>
-        <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 10 }}>
-          <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 'bold', marginBottom: '2rem' }}>Ready to transform your data workflow?</h2>
-          <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', marginBottom: '2.5rem' }}>
+      <section className="reveal section-container landing-cta-section">
+        <div className="landing-cta-background"></div>
+        <div className="landing-cta-content">
+          <h2 className="landing-cta-title">Ready to transform your data workflow?</h2>
+          <p className="landing-cta-subtitle">
             Join 1,000+ teams using InsightAI to automate their data pipelines today.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+          <div className="landing-cta-actions">
             <Link href="/signup" className="btn btn-primary btn-lg">
               Get Started Free
             </Link>
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <CheckCircle style={{ width: '16px', height: '16px', color: 'var(--color-success)' }} /> No credit card required
+            <p className="landing-cta-guarantee">
+              <CheckCircle className="landing-cta-guarantee-icon" /> No credit card required
             </p>
           </div>
         </div>
       </section>
 
       {/* Section 7: Footer */}
-      <footer style={{ backgroundColor: 'var(--bg-surface)', borderTop: '1px solid var(--border-color)', padding: '3rem 1.5rem' }}>
-        <div className="grid-4" style={{ width: '100%', maxWidth: '1600px', margin: '0 auto', gap: '2rem', marginBottom: '2rem' }}>
-          <div style={{ gridColumn: 'span 2' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-              <Brain style={{ color: 'var(--color-primary)', width: '24px', height: '24px' }} />
-              <span style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>InsightAI</span>
+      <footer className="landing-footer">
+        <div className="grid-4 landing-footer-grid">
+          <div className="landing-footer-brand-col">
+            <div className="landing-footer-brand">
+              <Brain className="landing-footer-brand-icon" />
+              <span className="landing-footer-brand-name">InsightAI</span>
             </div>
-            <p style={{ color: 'var(--text-muted)', maxWidth: '300px' }}>
+            <p className="landing-footer-brand-desc">
               The AI-powered data intelligence platform that turns natural language into clean, structured data.
             </p>
           </div>
           <div>
-            <h4 style={{ fontWeight: 600, marginBottom: '1rem' }}>Product</h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <li><Link href="#features" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Features</Link></li>
-              <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Pricing</a></li>
-              <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Documentation</a></li>
+            <h4 className="landing-footer-heading">Product</h4>
+            <ul className="landing-footer-list">
+              <li><Link href="#features" className="landing-footer-link">Features</Link></li>
+              <li><a href="#" className="landing-footer-link">Pricing</a></li>
+              <li><a href="#" className="landing-footer-link">Documentation</a></li>
             </ul>
           </div>
           <div>
-            <h4 style={{ fontWeight: 600, marginBottom: '1rem' }}>Company</h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>About</a></li>
-              <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Blog</a></li>
-              <li><a href="#" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Support</a></li>
+            <h4 className="landing-footer-heading">Company</h4>
+            <ul className="landing-footer-list">
+              <li><a href="#" className="landing-footer-link">About</a></li>
+              <li><a href="#" className="landing-footer-link">Blog</a></li>
+              <li><a href="#" className="landing-footer-link">Support</a></li>
             </ul>
           </div>
         </div>
-        <div className="flex-col-mobile" style={{ width: '100%', margin: '0 auto', paddingTop: '2rem', borderTop: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+        <div className="flex-col-mobile landing-footer-bottom">
           <p>© {new Date().getFullYear()} InsightAI Inc. All rights reserved.</p>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <a href="#" style={{ color: 'inherit', textDecoration: 'none' }}>Twitter</a>
-            <a href="#" style={{ color: 'inherit', textDecoration: 'none' }}>GitHub</a>
-            <a href="#" style={{ color: 'inherit', textDecoration: 'none' }}>LinkedIn</a>
+          <div className="landing-footer-socials">
+            <a href="#" className="landing-footer-social-link">Twitter</a>
+            <a href="#" className="landing-footer-social-link">GitHub</a>
+            <a href="#" className="landing-footer-social-link">LinkedIn</a>
           </div>
         </div>
       </footer>

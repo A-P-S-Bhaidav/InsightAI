@@ -104,7 +104,7 @@ model Workflow {
   status      String         @default("pending")
   progress    Int            @default(0)
   totalSteps  Int            @default(0)
-  config      String         @default("{}")
+  config      Json           @default("{}")
   startedAt   DateTime?
   completedAt DateTime?
   createdAt   DateTime       @default(now())
@@ -122,9 +122,9 @@ model WorkflowStep {
   workflowId String
   name       String
   type       String   // scrape, transform, validate, deduplicate, export
-  config     String   @default("{}")
+  config     Json     @default("{}")
   status     String   @default("pending")
-  output     String   @default("{}")
+  output     Json     @default("{}")
   error      String?
   order      Int
   startedAt  DateTime?
@@ -141,7 +141,7 @@ model Dataset {
   workflowId   String
   name         String
   description  String?
-  schema       String      @default("{}")
+  schema       Json        @default("[]")
   rowCount     Int         @default(0)
   qualityScore Float       @default(0)
   format       String      @default("json")
@@ -156,7 +156,7 @@ model Dataset {
 model DataPoint {
   id         String   @id @default(cuid())
   datasetId  String
-  data       String   @default("{}")
+  data       Json     @default("{}")
   sourceId   String?
   evidenceSnippet String?
   isValid    Boolean  @default(true)
