@@ -82,7 +82,7 @@ export const runAgenticTask = inngest.createFunction(
                 where: { id: dbStep.id },
                 data: {
                   status: agentStep.status,
-                  output: agentStep.result ? JSON.stringify({ detail: agentStep.result }) : undefined,
+                  output: agentStep.result ? { detail: agentStep.result } : undefined,
                   startedAt: agentStep.startedAt || undefined,
                   completedAt: agentStep.completedAt || undefined,
                 },
@@ -115,12 +115,12 @@ export const runAgenticTask = inngest.createFunction(
             status: 'completed',
             startedAt: new Date(),
             completedAt: new Date(),
-            output: JSON.stringify({
+            output: {
               recordCount: agentResult.data.length,
               format: 'json',
               totalSearches: agentResult.totalSearches,
               totalPages: agentResult.totalPagesScraped,
-            }),
+            },
           },
         });
 
@@ -142,7 +142,7 @@ export const runAgenticTask = inngest.createFunction(
             workflowId: workflow.id,
             name: `${parsedPrompt.dataType} Dataset`,
             description: `Collected via Agentic RAG: "${task.prompt.slice(0, 100)}"`,
-            schema: JSON.stringify(columns),
+            schema: columns,
             rowCount: agentResult.data.length,
             qualityScore,
             format: 'json',
@@ -157,7 +157,7 @@ export const runAgenticTask = inngest.createFunction(
           await prisma.dataPoint.create({
             data: {
               datasetId: dataset.id,
-              data: JSON.stringify(record),
+              data: record,
               sourceId: matchingSource?.id || null,
               isValid: true,
               confidence: 0.75 + Math.random() * 0.25,

@@ -66,7 +66,7 @@ export async function POST(
       if (step) {
         await prisma.workflowStep.update({
           where: { id: step.id },
-          data: { status, output: output ? JSON.stringify(output) : undefined, ...(status === 'completed' ? { completedAt: new Date() } : {}) },
+          data: { status, output: output ? output : undefined, ...(status === 'completed' ? { completedAt: new Date() } : {}) },
         });
       }
     };
@@ -105,7 +105,7 @@ export async function POST(
           totalSteps: stepNames.length,
           progress: 0,
           startedAt: new Date(),
-          config: JSON.stringify({ parsedPrompt }),
+          config: { parsedPrompt } as any,
         },
       });
 
@@ -121,7 +121,7 @@ export async function POST(
           workflowId: workflow.id,
           name: `${parsedPrompt.dataType} Dataset`,
           description: `Collected via Deep Research: "${task.prompt.slice(0, 100)}"`,
-          schema: JSON.stringify(columns),
+          schema: columns as any,
         },
       });
 
@@ -132,9 +132,11 @@ export async function POST(
     const dataset = workflow?.datasets[0];
     if (!workflow || !dataset) throw new Error('Workflow/Dataset missing');
     
-    const config = (workflow.config as Record<string, any>) || {};
+    const configRaw = workflow.config as any;
+    const config = typeof configRaw === 'string' ? JSON.parse(configRaw) : configRaw || {};
     const parsedPrompt = config.parsedPrompt;
-    const columns = (dataset.schema as string[]) || [];
+    const schemaRaw = dataset.schema as any;
+    const columns = typeof schemaRaw === 'string' ? JSON.parse(schemaRaw) : schemaRaw || [];
 
     // ACTION: PLAN
     if (action === 'plan') {
@@ -145,7 +147,7 @@ export async function POST(
       
       await prisma.workflow.update({
         where: { id: workflow.id },
-        data: { config: JSON.stringify({ ...config, plan }), progress: 1 }
+        data: { config: { ...config, plan } as any, progress: 1 }
       });
       await updateStep('plan', 'completed', { queries: plan.searchQueries.length });
 
@@ -178,13 +180,13 @@ export async function POST(
 
       // Fetch existing records to exclude them from generation
       const points = await prisma.dataPoint.findMany({ where: { datasetId: dataset.id, sourceId: null } });
-      const existingData = points.map(p => p.data as any);
+      const existingData = points.map(p => typeof p.data === 'string' ? JSON.parse(p.data) : p.data);
 
       const llmData = await generateDataFromLLMKnowledge(parsedPrompt, columns, existingData);
       
       for (const record of llmData) {
         await prisma.dataPoint.create({
-          data: { datasetId: dataset.id, data: JSON.stringify(record), confidence: 0.9, sourceId: null }
+          data: { datasetId: dataset.id, data: record as any, confidence: 0.9, sourceId: null }
         });
       }
       
@@ -264,7 +266,7 @@ export async function POST(
             await prisma.dataPoint.create({
               data: { 
                 datasetId: dataset.id, 
-                data: JSON.stringify(record), 
+                data: record, 
                 confidence: 0.8, 
                 sourceId: source.id,
                 evidenceSnippet: record._evidence || null 
@@ -300,7 +302,7 @@ export async function POST(
               await prisma.dataPoint.create({
                 data: { 
                   datasetId: dataset.id, 
-                  data: JSON.stringify(record), 
+                  data: record as any, 
                   confidence: 0.85, 
                   sourceId: subSource.id,
                   evidenceSnippet: record._evidence || null
@@ -343,7 +345,8 @@ export async function POST(
       // Load all points, deduplicate, compute score
       const points = await prisma.dataPoint.findMany({ where: { datasetId: dataset.id } });
       const rawRecords = points.map(p => {
-        const data = (p.data as Record<string, any>) || {};
+        const dataRaw = p.data as any;
+        const data = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw || {};
         data._sourceId = p.sourceId; // Inject sourceId to preserve it through merge
         return data;
       });
@@ -362,7 +365,7 @@ export async function POST(
         await prisma.dataPoint.create({
           data: { 
             datasetId: dataset.id, 
-            data: JSON.stringify(record), 
+            data: record, 
             confidence: 0.85, 
             sourceId: sourceId || null,
             evidenceSnippet: evidenceSnippet || null
