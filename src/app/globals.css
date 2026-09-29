@@ -1175,22 +1175,18 @@ button {
   }
   
   .sidebar {
-    width: 100%;
-    height: auto;
-    flex-direction: row;
-    border-right: none;
-    border-bottom: 1px solid var(--border-color);
-    z-index: var(--z-sticky);
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh !important;
+    width: 240px !important;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
   }
   
-  .sidebar-header {
-    display: none;
-  }
-  
-  .sidebar-nav {
-    flex-direction: row;
-    overflow-x: auto;
-    padding: var(--space-2);
+  .sidebar.mobile-open {
+    transform: translateX(0);
   }
   
   .page-header {
@@ -1214,4 +1210,26 @@ button {
     align-items: flex-end;
     padding: 0;
   }
+  
+  /* Mobile Utilities */
+  .hidden-mobile {
+    display: none !important;
+  }
+  
+  .flex-col-mobile {
+    flex-direction: column !important;
+  }
+  
+  .mobile-overlay-active {
+    overflow: hidden;
+  }
+  
+  .mobile-only-flex {
+    display: flex !important;
+  }
+}
+
+/* Base Desktop Hidden Utilities */
+.mobile-only-flex {
+  display: none !important;
 }

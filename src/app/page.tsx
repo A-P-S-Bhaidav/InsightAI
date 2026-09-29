@@ -38,7 +38,7 @@ export default function LandingPage() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-main)', color: 'var(--text-primary)' }}>
       {/* Navigation */}
-      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem 1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem', width: '100%', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Brain style={{ color: 'var(--color-primary)', width: '32px', height: '32px' }} />
           <span style={{ fontWeight: 'bold', fontSize: '1.25rem', letterSpacing: '-0.025em' }}>InsightAI</span>
@@ -105,7 +105,7 @@ export default function LandingPage() {
 
       {/* Section 2: Trusted By / Stats Bar */}
       <section className="reveal" style={{ padding: '3rem 0', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-surface)' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem', textAlign: 'center' }}>
+        <div style={{ width: '100%', margin: '0 auto', padding: '0 2rem', textAlign: 'center' }}>
           <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.875rem', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '2rem' }}>
             Trusted by 1,000+ data teams worldwide
           </p>
@@ -127,7 +127,7 @@ export default function LandingPage() {
       </section>
 
       {/* Section 3: Features Grid */}
-      <section id="features" style={{ padding: '6rem 1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <section id="features" style={{ padding: '6rem 2rem', width: '100%', margin: '0 auto' }}>
         <div className="reveal" style={{ textAlign: 'center', marginBottom: '4rem' }}>
           <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Everything you need to master your data</h2>
           <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>
@@ -157,7 +157,7 @@ export default function LandingPage() {
 
       {/* Section 4: How It Works */}
       <section style={{ padding: '6rem 0', backgroundColor: 'var(--bg-surface)', overflow: 'hidden' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem' }}>
+        <div style={{ width: '100%', margin: '0 auto', padding: '0 2rem' }}>
           <div className="reveal" style={{ textAlign: 'center', marginBottom: '5rem' }}>
             <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>How It Works</h2>
             <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)' }}>Three simple steps to structured data.</p>
@@ -165,7 +165,7 @@ export default function LandingPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6rem' }}>
             {/* Step 1 */}
-            <div className="reveal-left" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '3rem' }}>
+            <div className="reveal-left flex-col-mobile" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '3rem' }}>
               <div style={{ flex: '1 1 400px' }}>
                 <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>1</div>
                 <h3 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>Describe Your Data</h3>
@@ -188,7 +188,7 @@ export default function LandingPage() {
             </div>
 
             {/* Step 2 */}
-            <div className="reveal-right" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '3rem', flexDirection: 'row-reverse' }}>
+            <div className="reveal-right flex-col-mobile" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '3rem', flexDirection: 'row-reverse' }}>
               <div style={{ flex: '1 1 400px' }}>
                 <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-secondary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>2</div>
                 <h3 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>AI Creates a Pipeline</h3>
@@ -220,7 +220,7 @@ export default function LandingPage() {
             </div>
 
             {/* Step 3 */}
-            <div className="reveal-left" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '3rem' }}>
+            <div className="reveal-left flex-col-mobile" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '3rem' }}>
               <div style={{ flex: '1 1 400px' }}>
                 <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-success)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>3</div>
                 <h3 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>Get Structured Results</h3>
@@ -272,7 +272,7 @@ export default function LandingPage() {
       </section>
 
       {/* Section 5: Screenshots / Dashboard Preview */}
-      <section className="reveal" style={{ padding: '6rem 1.5rem', maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
+      <section className="reveal" style={{ padding: '6rem 2rem', width: '100%', margin: '0 auto', textAlign: 'center' }}>
         <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>A command center for all your data operations</h2>
         <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', marginBottom: '3rem', maxWidth: '600px', margin: '0 auto 3rem' }}>
           Monitor tasks, analyze quality scores, and manage datasets from one powerful dashboard.
@@ -315,7 +315,7 @@ export default function LandingPage() {
 
       {/* Section 7: Footer */}
       <footer style={{ backgroundColor: 'var(--bg-surface)', borderTop: '1px solid var(--border-color)', padding: '3rem 1.5rem' }}>
-        <div className="grid-4" style={{ maxWidth: '1200px', margin: '0 auto', gap: '2rem', marginBottom: '2rem' }}>
+        <div className="grid-4" style={{ width: '100%', margin: '0 auto', gap: '2rem', marginBottom: '2rem' }}>
           <div style={{ gridColumn: 'span 2' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
               <Brain style={{ color: 'var(--color-primary)', width: '24px', height: '24px' }} />
@@ -342,7 +342,7 @@ export default function LandingPage() {
             </ul>
           </div>
         </div>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', paddingTop: '2rem', borderTop: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+        <div className="flex-col-mobile" style={{ width: '100%', margin: '0 auto', paddingTop: '2rem', borderTop: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
           <p>© {new Date().getFullYear()} InsightAI Inc. All rights reserved.</p>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <a href="#" style={{ color: 'inherit', textDecoration: 'none' }}>Twitter</a>

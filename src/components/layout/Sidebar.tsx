@@ -18,7 +18,7 @@ const NAV_ITEMS = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isMobileOpen, onClose }: { isMobileOpen?: boolean; onClose?: () => void }) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
 
@@ -33,10 +33,13 @@ export default function Sidebar() {
     localStorage.setItem('sidebar_collapsed', String(next));
   };
 
-  const w = collapsed ? 68 : 240;
+  // On mobile, if the sidebar is open, we don't want it collapsed.
+  const isCurrentlyCollapsed = collapsed && !isMobileOpen;
+  const w = isCurrentlyCollapsed ? 68 : 240;
 
   return (
     <aside
+      className={`sidebar ${isMobileOpen ? 'mobile-open' : ''}`}
       style={{
         width: w,
         minWidth: w,
@@ -45,16 +48,16 @@ export default function Sidebar() {
         flexDirection: 'column',
         background: 'var(--bg-surface)',
         borderRight: '1px solid var(--border-color)',
-        transition: 'width 200ms ease, min-width 200ms ease',
+        transition: 'all 200ms ease',
         overflow: 'hidden',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '16px 0' : '16px 16px', justifyContent: collapsed ? 'center' : 'flex-start' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: isCurrentlyCollapsed ? '16px 0' : '16px 16px', justifyContent: isCurrentlyCollapsed ? 'center' : 'flex-start' }}>
         <Brain size={26} color="var(--color-primary)" style={{ flexShrink: 0 }} />
-        {!collapsed && <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>InsightAI</span>}
+        {!isCurrentlyCollapsed && <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>InsightAI</span>}
       </div>
 
-      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, padding: collapsed ? '0 8px' : '0 10px', marginTop: 4 }}>
+      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, padding: isCurrentlyCollapsed ? '0 8px' : '0 10px', marginTop: 4 }}>
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href || (item.href !== '/dashboard' && item.href !== '/tasks/new' && pathname.startsWith(item.href + '/'));
           const Icon = item.icon;
@@ -62,10 +65,11 @@ export default function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
+              onClick={() => onClose?.()}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
-                height: 40, padding: collapsed ? '0' : '0 12px',
-                justifyContent: collapsed ? 'center' : 'flex-start',
+                height: 40, padding: isCurrentlyCollapsed ? '0' : '0 12px',
+                justifyContent: isCurrentlyCollapsed ? 'center' : 'flex-start',
                 borderRadius: 8, textDecoration: 'none', fontSize: 13.5, fontWeight: active ? 500 : 400,
                 color: active ? 'var(--color-primary)' : 'var(--text-secondary)',
                 background: active ? 'var(--color-primary-900)' : 'transparent',
@@ -74,26 +78,26 @@ export default function Sidebar() {
               }}
             >
               <Icon size={18} style={{ flexShrink: 0 }} />
-              {!collapsed && <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</span>}
+              {!isCurrentlyCollapsed && <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</span>}
             </Link>
           );
         })}
       </nav>
 
-      <div style={{ padding: collapsed ? '12px 8px' : '12px 10px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ padding: isCurrentlyCollapsed ? '12px 8px' : '12px 10px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: 6 }}>
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}
           style={{
             display: 'flex', alignItems: 'center', gap: 10, height: 36,
-            padding: collapsed ? '0' : '0 12px', justifyContent: collapsed ? 'center' : 'flex-start',
+            padding: isCurrentlyCollapsed ? '0' : '0 12px', justifyContent: isCurrentlyCollapsed ? 'center' : 'flex-start',
             borderRadius: 8, border: 'none', background: 'transparent',
             color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', width: '100%',
           }}
         >
           <LogOut size={16} style={{ flexShrink: 0 }} />
-          {!collapsed && <span>Logout</span>}
+          {!isCurrentlyCollapsed && <span>Logout</span>}
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between' }}>
+        <div className="hidden-mobile" style={{ display: 'flex', alignItems: 'center', justifyContent: isCurrentlyCollapsed ? 'center' : 'space-between' }}>
           <button
             onClick={toggle}
             style={{
@@ -103,9 +107,9 @@ export default function Sidebar() {
               color: 'var(--text-muted)', cursor: 'pointer',
             }}
           >
-            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+            {isCurrentlyCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
-          {!collapsed && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>v2.0</span>}
+          {!isCurrentlyCollapsed && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>v2.0</span>}
         </div>
       </div>
     </aside>

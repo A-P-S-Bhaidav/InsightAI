@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Sun, Moon, User, LogOut, Settings } from 'lucide-react';
+import { Sun, Moon, User, LogOut, Settings, Menu } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
@@ -16,7 +16,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/settings': 'Settings',
 };
 
-export default function Header() {
+export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -48,7 +48,19 @@ export default function Header() {
         background: 'transparent',
       }}
     >
-      <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>{title}</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <button
+          className="mobile-only-flex"
+          onClick={onMenuClick}
+          style={{
+            background: 'transparent', border: 'none', color: 'var(--text-primary)',
+            cursor: 'pointer', alignItems: 'center', padding: 0
+          }}
+        >
+          <Menu size={20} />
+        </button>
+        <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>{title}</h1>
+      </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <button

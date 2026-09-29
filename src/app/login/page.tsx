@@ -76,10 +76,10 @@ function LoginForm() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-default)' }}>
-      <div className="card animate-fade-in" style={{ display: 'flex', maxWidth: '1000px', width: '100%', margin: '2rem', padding: '0', overflow: 'hidden', minHeight: '600px' }}>
+      <div className="card animate-fade-in flex-col-mobile" style={{ display: 'flex', maxWidth: '1000px', width: '100%', margin: '1rem', padding: '0', overflow: 'hidden', minHeight: '600px' }}>
         
         {/* Left Side - Branding */}
-        <div style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)', padding: '3rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', color: 'white' }}>
+        <div className="hidden-mobile" style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)', padding: '3rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', color: 'white' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
             <Brain size={40} />
             <h1 style={{ fontSize: '2rem', margin: 0 }}>InsightAI</h1>
@@ -92,7 +92,7 @@ function LoginForm() {
         </div>
 
         {/* Right Side - Login Form */}
-        <div style={{ flex: 1, padding: '4rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--bg-surface)' }}>
+        <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--bg-surface)' }}>
           <div style={{ marginBottom: '2rem' }}>
             <h2 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Welcome back</h2>
             <p style={{ color: 'var(--color-text-secondary)' }}>Sign in to continue to your dashboard</p>
