@@ -208,11 +208,10 @@ CRITICAL INSTRUCTIONS:
 1. Provide ${targetCount}-${targetCount + 10} REAL, FACTUAL records
 2. Each record MUST have ALL of these exact column keys: ${JSON.stringify(columns)}
 3. Only include information you are confident is accurate
-4. STRICT ENFORCEMENT ON DATES: If the task specifies a year (e.g. 2026) or a timeframe (e.g. "recent"), you MUST completely IGNORE and DROP any records from older years (like 2022, 2024, etc.). DO NOT include outdated records under any circumstances.
-5. Return ONLY a valid JSON array — no markdown, no backticks, no explanation, no text before or after
-6. Every value must be a string
-7. Fill in as many columns as possible — empty strings only as last resort
-8. Make sure the data is diverse and covers different entries
+4. Return ONLY a valid JSON array — no markdown, no backticks, no explanation, no text before or after
+5. Every value must be a string
+6. Fill in as many columns as possible — empty strings only as last resort
+7. Make sure the data is diverse and covers different entries
 
 Your response must start with [ and end with ]`;
 

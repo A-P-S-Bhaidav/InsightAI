@@ -32,17 +32,15 @@ INSTRUCTIONS:
 3. If a value is missing, use "" (empty string). DO NOT drop the row if some columns are missing.
 4. Return a JSON array of objects.
 5. Each object MUST have keys matching the REQUIRED COLUMNS exactly (case-sensitive).
-6. Each object MUST also include a special key "_evidence" containing the exact, literal quote or HTML snippet from the text that proves this data is real.
-7. Return ONLY valid JSON — no markdown, no explanation, no backticks.
+6. Return ONLY valid JSON — no markdown, no explanation, no backticks.
+7. Extract REAL data from the page. Do NOT fabricate values, but do include partial records if you find them.
 8. AGGRESSIVE EXTRACTION: We need volume. Extract every possible matching entity you can find on the page.
-9. STRICT ENFORCEMENT ON DATES: If the task specifies a timeframe, you MUST IGNORE any outdated records.
 
 Example response format:
 [
   {
     "${columns[0]}": "value1", 
-    "${columns.length > 1 ? columns[1] : 'col2'}": "value2",
-    "_evidence": "Exact quote from the text showing value1 and value2"
+    "${columns.length > 1 ? columns[1] : 'col2'}": "value2"
   }
 ]`;
 
@@ -88,7 +86,6 @@ Example response format:
         record[col] = String(val).trim();
       }
       record['_source'] = sourceUrl;
-      record['_evidence'] = row['_evidence'] || '';
       return record;
     }).filter(row => {
       // Keep rows where at least ONE user column has data
@@ -132,19 +129,8 @@ export function mergeRecords(
           existing[col] = record[col];
         }
       }
-      // Prefer the record with the most evidence
-      if (!existing['_evidenceSnippet'] && record['_evidence']) {
-        existing['_evidenceSnippet'] = record['_evidence'];
-      }
-    } else {
-      // Map _evidence to _evidenceSnippet for the final schema
-      const finalRecord = { ...record };
-      if (finalRecord['_evidence']) {
-        finalRecord['_evidenceSnippet'] = finalRecord['_evidence'];
-        delete finalRecord['_evidence'];
-      }
-      seen.set(key, finalRecord);
-      merged.push(finalRecord);
+      seen.set(key, record);
+      merged.push(record);
     }
   }
 
