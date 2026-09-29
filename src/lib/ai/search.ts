@@ -42,7 +42,14 @@ export async function webSearch(query: string, maxResults: number = 8): Promise<
     return ddgJsonResults;
   }
 
-  // Strategy 4: Generate synthetic search URLs from known data sources
+  // Strategy 4: DuckDuckGo HTML scraping (fallback)
+  const ddgHtmlResults = await searchViaDDGHtml(query, maxResults);
+  if (ddgHtmlResults.length > 0) {
+    console.log(`[WebSearch] DDG HTML returned ${ddgHtmlResults.length} results`);
+    return ddgHtmlResults;
+  }
+
+  // Strategy 5: Generate synthetic search URLs from known data sources
   console.warn(`[WebSearch] All search providers failed. Using synthetic URLs.`);
   return generateSyntheticResults(query);
 }
@@ -198,8 +205,63 @@ async function searchViaDDGJson(query: string, maxResults: number): Promise<Sear
   }
 }
 
+/**
+ * DuckDuckGo HTML scraping (fallback)
+ */
+async function searchViaDDGHtml(query: string, maxResults: number): Promise<SearchResult[]> {
+  const results: SearchResult[] = [];
 
+  try {
+    const response = await fetch(`https://html.duckduckgo.com/html/`, {
+      method: 'POST',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      body: `q=${encodeURIComponent(query)}`,
+      signal: AbortSignal.timeout(10000),
+    });
 
+    if (!response.ok) {
+      console.warn(`[WebSearch] DDG HTML returned ${response.status}`);
+      return results;
+    }
+
+    const html = await response.text();
+    const $ = cheerio.load(html);
+
+    $('.result').each((i, el) => {
+      if (i >= maxResults) return false;
+      const titleEl = $(el).find('.result__title a');
+      const snippetEl = $(el).find('.result__snippet');
+      const rawUrl = titleEl.attr('href') || '';
+
+      // DuckDuckGo wraps URLs — extract the actual URL
+      let url = rawUrl;
+      try {
+        const match = rawUrl.match(/uddg=([^&]+)/);
+        if (match) url = decodeURIComponent(match[1]);
+      } catch { /* keep raw */ }
+
+      if (url && !url.includes('duckduckgo.com') && url.startsWith('http')) {
+        let domain = '';
+        try { domain = new URL(url).hostname; } catch { /* */ }
+        results.push({
+          title: titleEl.text().trim(),
+          url,
+          snippet: snippetEl.text().trim(),
+          domain,
+        });
+      }
+    });
+  } catch (error) {
+    console.error('[WebSearch] DDG HTML search failed:', error);
+  }
+
+  return results;
+}
 /**
  * Generate synthetic search results from well-known directories
  * when all search engines fail

@@ -113,67 +113,37 @@ export function mergeRecords(
   columns: string[]
 ): Record<string, string>[] {
   const merged: Record<string, string>[] = [];
+  const seen = new Map<string, Record<string, string>>();
 
   for (const record of allRecords) {
     // Generate a core identity string for this record
-    const identityString = columns
+    const key = columns
       .map(col => (record[col] || '').toLowerCase().trim())
       .filter(v => v.length > 0)
-      .join(' ');
+      .join('|');
 
-    if (!identityString) continue;
+    if (!key) continue;
 
-    let isDuplicate = false;
-    
-    if (merged.length > 0) {
-      // Create search targets from merged array
-      const targets = merged.map((m, index) => {
-        return {
-          id: index,
-          text: columns
-            .map(col => (m[col] || '').toLowerCase().trim())
-            .filter(v => v.length > 0)
-            .join(' ')
-        };
-      });
-
-      // Search using fuzzysort
-      const results = fuzzysort.go(identityString, targets, { key: 'text', limit: 1 });
-      
-      if (results.length > 0) {
-        // fuzzysort score is negative, closer to 0 is better.
-        // We'll use a threshold to determine similarity
-        const score = results[0].score;
-        const matchedObj = results[0].obj;
-        
-        // Typical fuzzysort scores for very similar text are close to 0 (e.g. -100 to 0)
-        // If it's a very good match:
-        if (score > -150) {
-          isDuplicate = true;
-          const existing = merged[matchedObj.id];
-          
-          // Merge missing fields into the existing record
-          for (const col of columns) {
-            if (!existing[col] && record[col]) {
-              existing[col] = record[col];
-            }
-          }
-          
-          // Prefer the record with the most evidence
-          if (!existing['_evidenceSnippet'] && record['_evidence']) {
-            existing['_evidenceSnippet'] = record['_evidence'];
-          }
+    if (seen.has(key)) {
+      const existing = seen.get(key)!;
+      // Merge missing fields into the existing record
+      for (const col of columns) {
+        if (!existing[col] && record[col]) {
+          existing[col] = record[col];
         }
       }
-    }
-
-    if (!isDuplicate) {
+      // Prefer the record with the most evidence
+      if (!existing['_evidenceSnippet'] && record['_evidence']) {
+        existing['_evidenceSnippet'] = record['_evidence'];
+      }
+    } else {
       // Map _evidence to _evidenceSnippet for the final schema
       const finalRecord = { ...record };
       if (finalRecord['_evidence']) {
         finalRecord['_evidenceSnippet'] = finalRecord['_evidence'];
         delete finalRecord['_evidence'];
       }
+      seen.set(key, finalRecord);
       merged.push(finalRecord);
     }
   }
