@@ -55,8 +55,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           {toasts.map(toast => (
             <div key={toast.id} className={`toast toast-${toast.type}`} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '8px', background: 'var(--color-surface-elevated, #1a1a2e)', border: '1px solid var(--color-border, #2a2a3e)', boxShadow: '0 10px 25px rgba(0,0,0,0.3)', minWidth: '320px', animation: 'slideInRight 0.3s ease' }}>
               <span style={{ color: toast.type === 'success' ? 'var(--color-success)' : toast.type === 'error' ? 'var(--color-danger)' : 'var(--color-info)' }}>{getIcon(toast.type)}</span>
-              <p style={{ margin: 0, flex: 1, fontSize: '0.875rem', color: 'var(--color-text-primary, #fff)' }}>{toast.message}</p>
-              <button onClick={() => removeToast(toast.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--color-text-muted, #888)' }}>
+              <p style={{ margin: 0, flex: 1, fontSize: '0.875rem', color: 'var(--text-primary, #fff)' }}>{toast.message}</p>
+              <button onClick={() => removeToast(toast.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--text-muted, #888)' }}>
                 <X size={16} />
               </button>
             </div>

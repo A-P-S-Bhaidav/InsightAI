@@ -1165,6 +1165,11 @@ button {
 }
 
 /* Mobile */
+/* Base Desktop Hidden Utilities */
+.mobile-only-flex {
+  display: none !important;
+}
+
 @media (max-width: 768px) {
   .grid-4, .grid-3, .grid-2 {
     grid-template-columns: 1fr;
@@ -1220,6 +1225,16 @@ button {
     flex-direction: column !important;
   }
   
+  .flex-col-mobile > * {
+    flex-basis: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  
+  .section-container {
+    padding: 4rem 1.5rem !important;
+  }
+  
   .mobile-overlay-active {
     overflow: hidden;
   }
@@ -1229,7 +1244,10 @@ button {
   }
 }
 
-/* Base Desktop Hidden Utilities */
-.mobile-only-flex {
-  display: none !important;
+/* Layout Utilities */
+.section-container {
+  padding: 6rem 2rem;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
 }

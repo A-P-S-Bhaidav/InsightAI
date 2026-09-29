@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { 
   Brain, 
@@ -11,7 +11,10 @@ import {
   BarChart,
   CheckCircle,
   Database,
-  ListTodo
+  Database,
+  ListTodo,
+  Menu,
+  X
 } from 'lucide-react';
 import './landing.css';
 
@@ -35,34 +38,82 @@ export default function LandingPage() {
     return () => observer.disconnect();
   }, []);
 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-main)', color: 'var(--text-primary)' }}>
       {/* Navigation */}
-      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 2rem', width: '100%', margin: '0 auto' }}>
+      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem 2rem', width: '100%', margin: '0 auto', position: 'relative', zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Brain style={{ color: 'var(--color-primary)', width: '32px', height: '32px' }} />
           <span style={{ fontWeight: 'bold', fontSize: '1.25rem', letterSpacing: '-0.025em' }}>InsightAI</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <Link href="/login" style={{ color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s' }}>
+        
+        {/* Desktop Nav */}
+        <div className="hidden-mobile" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <a href="#features" style={{ color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s', fontWeight: 500 }}>Features</a>
+          <a href="#how-it-works" style={{ color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s', fontWeight: 500 }}>How It Works</a>
+          <div style={{ width: '1px', height: '24px', backgroundColor: 'var(--border-color)' }}></div>
+          <Link href="/login" style={{ color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s', fontWeight: 500 }}>
             Log In
           </Link>
           <Link href="/signup" className="btn btn-primary">
             Get Started
           </Link>
         </div>
+
+        {/* Mobile Hamburger Toggle */}
+        <button 
+          className="mobile-only-flex" 
+          onClick={() => setIsMobileMenuOpen(true)}
+          style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '0.5rem' }}
+        >
+          <Menu size={28} />
+        </button>
       </nav>
+
+      {/* Mobile Overlay Menu */}
+      {isMobileMenuOpen && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'var(--bg-main)', zIndex: 999, display: 'flex', flexDirection: 'column', padding: '1.5rem 2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Brain style={{ color: 'var(--color-primary)', width: '32px', height: '32px' }} />
+              <span style={{ fontWeight: 'bold', fontSize: '1.25rem', letterSpacing: '-0.025em' }}>InsightAI</span>
+            </div>
+            <button 
+              onClick={() => setIsMobileMenuOpen(false)}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '0.5rem' }}
+            >
+              <X size={28} />
+            </button>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', width: '100%', fontSize: '1.25rem', fontWeight: 500, borderTop: '1px solid var(--border-color)' }}>
+            <a href="#features" onClick={() => setIsMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', borderBottom: '1px solid var(--border-color)', padding: '1.5rem 0', textAlign: 'center', width: '100%', display: 'block' }}>Features</a>
+            <a href="#how-it-works" onClick={() => setIsMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', borderBottom: '1px solid var(--border-color)', padding: '1.5rem 0', textAlign: 'center', width: '100%', display: 'block' }}>How It Works</a>
+            <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', borderBottom: '1px solid var(--border-color)', padding: '1.5rem 0', textAlign: 'center', width: '100%', display: 'block' }}>
+              Log In
+            </Link>
+          </div>
+          
+          <div style={{ marginTop: 'auto', paddingBottom: '2rem' }}>
+            <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)} className="btn btn-primary" style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '1rem' }}>
+              Get Started Free
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Section 1: Hero */}
       <section className="hero-gradient" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', paddingTop: '8rem', paddingBottom: '5rem', paddingLeft: '1rem', paddingRight: '1rem', minHeight: '80vh' }}>
-        <div className="reveal" style={{ position: 'relative', zIndex: 10, maxWidth: '800px', margin: '0 auto' }}>
-          <h1 style={{ fontSize: 'clamp(3rem, 5vw, 4.5rem)', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1.1, marginBottom: '2rem' }}>
+        <div className="reveal" style={{ position: 'relative', zIndex: 10, maxWidth: '1400px', margin: '0 auto' }}>
+          <h1 style={{ fontSize: 'clamp(3rem, 6vw, 5.5rem)', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1.1, marginBottom: '2rem' }}>
             Turn Natural Language into{' '}
             <span style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Structured Data
             </span>
           </h1>
-          <p style={{ fontSize: 'clamp(1.125rem, 2vw, 1.5rem)', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto 2.5rem' }}>
+          <p style={{ fontSize: 'clamp(1.125rem, 2vw, 1.5rem)', color: 'var(--text-secondary)', maxWidth: '800px', margin: '0 auto 2.5rem' }}>
             InsightAI uses AI to collect, validate, and structure data from the web — all from a simple text prompt.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
@@ -76,7 +127,7 @@ export default function LandingPage() {
         </div>
 
         {/* Hero Illustration Mockup */}
-        <div className="reveal" style={{ marginTop: '5rem', width: '100%', maxWidth: '1024px', margin: '5rem auto 0' }}>
+        <div className="reveal" style={{ marginTop: '5rem', width: '100%', maxWidth: '1400px', margin: '5rem auto 0' }}>
           <div className="dashboard-mockup" style={{ padding: '4px' }}>
             <div className="dashboard-mockup-header">
               <div className="mockup-dot red"></div>
@@ -127,7 +178,7 @@ export default function LandingPage() {
       </section>
 
       {/* Section 3: Features Grid */}
-      <section id="features" style={{ padding: '6rem 2rem', width: '100%', margin: '0 auto' }}>
+      <section id="features" className="section-container">
         <div className="reveal" style={{ textAlign: 'center', marginBottom: '4rem' }}>
           <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Everything you need to master your data</h2>
           <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>
@@ -156,8 +207,8 @@ export default function LandingPage() {
       </section>
 
       {/* Section 4: How It Works */}
-      <section style={{ padding: '6rem 0', backgroundColor: 'var(--bg-surface)', overflow: 'hidden' }}>
-        <div style={{ width: '100%', margin: '0 auto', padding: '0 2rem' }}>
+      <section style={{ backgroundColor: 'var(--bg-surface)', overflow: 'hidden' }}>
+        <div className="section-container">
           <div className="reveal" style={{ textAlign: 'center', marginBottom: '5rem' }}>
             <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>How It Works</h2>
             <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)' }}>Three simple steps to structured data.</p>
@@ -272,7 +323,7 @@ export default function LandingPage() {
       </section>
 
       {/* Section 5: Screenshots / Dashboard Preview */}
-      <section className="reveal" style={{ padding: '6rem 2rem', width: '100%', margin: '0 auto', textAlign: 'center' }}>
+      <section className="reveal section-container" style={{ textAlign: 'center' }}>
         <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>A command center for all your data operations</h2>
         <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', marginBottom: '3rem', maxWidth: '600px', margin: '0 auto 3rem' }}>
           Monitor tasks, analyze quality scores, and manage datasets from one powerful dashboard.
@@ -295,9 +346,9 @@ export default function LandingPage() {
       </section>
 
       {/* Section 6: CTA Banner */}
-      <section className="reveal" style={{ padding: '6rem 0', position: 'relative', overflow: 'hidden' }}>
+      <section className="reveal section-container" style={{ position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, var(--color-primary), var(--color-secondary))', opacity: 0.1 }}></div>
-        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 1.5rem', textAlign: 'center', position: 'relative', zIndex: 10 }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 10 }}>
           <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 'bold', marginBottom: '2rem' }}>Ready to transform your data workflow?</h2>
           <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', marginBottom: '2.5rem' }}>
             Join 1,000+ teams using InsightAI to automate their data pipelines today.
@@ -315,7 +366,7 @@ export default function LandingPage() {
 
       {/* Section 7: Footer */}
       <footer style={{ backgroundColor: 'var(--bg-surface)', borderTop: '1px solid var(--border-color)', padding: '3rem 1.5rem' }}>
-        <div className="grid-4" style={{ width: '100%', margin: '0 auto', gap: '2rem', marginBottom: '2rem' }}>
+        <div className="grid-4" style={{ width: '100%', maxWidth: '1600px', margin: '0 auto', gap: '2rem', marginBottom: '2rem' }}>
           <div style={{ gridColumn: 'span 2' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
               <Brain style={{ color: 'var(--color-primary)', width: '24px', height: '24px' }} />

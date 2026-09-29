@@ -95,7 +95,7 @@ function LoginForm() {
         <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--bg-surface)' }}>
           <div style={{ marginBottom: '2rem' }}>
             <h2 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Welcome back</h2>
-            <p style={{ color: 'var(--color-text-secondary)' }}>Sign in to continue to your dashboard</p>
+            <p style={{ color: 'var(--text-secondary)' }}>Sign in to continue to your dashboard</p>
           </div>
 
           {error && (
@@ -126,7 +126,7 @@ function LoginForm() {
                 Continue with Google
               </button>
 
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem', color: 'var(--color-text-muted)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem', color: 'var(--text-muted)' }}>
                 <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }}></div>
                 <span style={{ padding: '0 1rem', fontSize: '0.875rem' }}>OR</span>
                 <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }}></div>
@@ -138,7 +138,7 @@ function LoginForm() {
             <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Email Address</label>
               <div style={{ position: 'relative' }}>
-                <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
+                <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                 <input 
                   type="email" 
                   className="input" 
@@ -156,7 +156,7 @@ function LoginForm() {
                 <span>Password</span>
               </label>
               <div style={{ position: 'relative' }}>
-                <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
+                <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                 <input 
                   type="password" 
                   className="input" 
@@ -180,7 +180,7 @@ function LoginForm() {
             </button>
           </form>
 
-          <p style={{ marginTop: '2rem', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+          <p style={{ marginTop: '2rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
             Don&apos;t have an account?{' '}
             <Link href="/signup" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}>
               Sign up
