@@ -205,6 +205,38 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Section: Why InsightAI vs LLMs */}
+      <section className="section-container" style={{ backgroundColor: 'var(--bg-main)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
+        <div className="reveal" style={{ textAlign: 'center', marginBottom: '4rem' }}>
+          <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Why InsightAI vs. Standard LLMs?</h2>
+          <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', maxWidth: '800px', margin: '0 auto' }}>
+            ChatGPT is a conversational tool. InsightAI is an autonomous Data Engineering Pipeline.
+          </p>
+        </div>
+        
+        <div className="grid-2" style={{ gap: '2rem', maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))' }}>
+          <div className="card reveal" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem', borderTop: '4px solid #ef4444' }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>The LLM Problem</h3>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem', color: 'var(--text-secondary)' }}>
+              <li><strong style={{ color: 'var(--text-primary)' }}>Hallucinations:</strong> LLMs guess data and generate inconsistent formats.</li>
+              <li><strong style={{ color: 'var(--text-primary)' }}>Poor Browsing:</strong> They fail on anti-bot protections and don't dig deep.</li>
+              <li><strong style={{ color: 'var(--text-primary)' }}>No Verifiability:</strong> You can't verify where the data came from easily.</li>
+              <li><strong style={{ color: 'var(--text-primary)' }}>Context Limits:</strong> Long tasks cause them to repeat or forget data.</li>
+            </ul>
+          </div>
+          
+          <div className="card reveal" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem', borderTop: '4px solid var(--color-success)' }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>The InsightAI Solution</h3>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem', color: 'var(--text-secondary)' }}>
+              <li><strong style={{ color: 'var(--text-primary)' }}>Deterministic Extraction:</strong> We force strict schemas using Zod. No guessing.</li>
+              <li><strong style={{ color: 'var(--text-primary)' }}>Deep Web Scraping:</strong> Autonomous agents navigate past blockers in parallel.</li>
+              <li><strong style={{ color: 'var(--text-primary)' }}>Traceable Evidence:</strong> Every row gets an `evidenceSnippet` with a source URL.</li>
+              <li><strong style={{ color: 'var(--text-primary)' }}>Fuzzy Deduplication:</strong> We match rows at the database level to ensure zero duplicates.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       {/* Section 4: How It Works */}
       <section id="how-it-works" style={{ backgroundColor: 'var(--bg-surface)', overflow: 'hidden' }}>
         <div className="section-container">

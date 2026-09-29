@@ -93,8 +93,18 @@ Scrape → Transform → Validate → Deduplicate → Export. Fully automated.
 Dark/light themes, glassmorphism, scroll animations, onboarding tutorial. SaaS-grade polish.
 
 </td>
-</tr>
 </table>
+
+---
+
+## Why InsightAI vs. Standard LLMs? (e.g. ChatGPT, Claude)
+
+**InsightAI is an autonomous Data Engineering Pipeline, not just a chatbot.**
+
+- **LLMs hallucinate; InsightAI extracts deterministically:** We don't ask the LLM "what do you know?". We use Zod and Structured Outputs to mathematically force the LLM to adhere to a strict schema based on live data.
+- **LLMs can't browse deeply:** Standard LLMs fail on anti-bot protections and struggle with heavily JavaScript-rendered pages. InsightAI is hooked into an advanced scraping API and uses a multi-agent orchestrated pipeline to formulate multiple search queries and visit dozens of pages in parallel.
+- **Traceability (The Evidence Snippet):** InsightAI saves an exact `evidenceSnippet` and source URL for every single data point extracted. You don't have to trust the AI; you can literally click the source link to verify it.
+- **Fuzzy Deduplication & Context Awareness:** When an LLM browses for too long, its context window overflows and it repeats itself. InsightAI checks every new row against the PostgreSQL database using a Levenshtein distance algorithm, ensuring duplicates are caught even if worded slightly differently.
 
 ---
 
