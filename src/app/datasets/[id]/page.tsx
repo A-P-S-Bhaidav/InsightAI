@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Database, Download, Loader2 } from 'lucide-react';
+import { ArrowLeft, Database, Download, Loader2, Search, ArrowUpDown } from 'lucide-react';
 import Link from 'next/link';
 
 const cardStyle: React.CSSProperties = {
@@ -17,6 +17,8 @@ export default function DatasetDetailPage() {
   const [response, setResponse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('Data Table');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc'|'desc' } | null>(null);
 
   useEffect(() => {
     fetch(`/api/datasets/${id}`)
@@ -42,11 +44,38 @@ export default function DatasetDetailPage() {
   const stats = response.stats || {};
   const columns = dataPoints.length > 0 ? Object.keys(dataPoints[0]).filter(k => !k.startsWith('_')) : [];
 
-  // Sources
   const sources = (response.dataPoints || [])
     .filter((dp: any) => dp.source)
     .map((dp: any) => dp.source)
     .filter((s: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.domain === s.domain) === i);
+
+  // Sorting and filtering logic
+  let processedData = [...dataPoints];
+  
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    processedData = processedData.filter((row: any) => 
+      columns.some(col => String(row[col] || '').toLowerCase().includes(q))
+    );
+  }
+
+  if (sortConfig) {
+    processedData.sort((a, b) => {
+      const aVal = String(a[sortConfig.key] || '').toLowerCase();
+      const bVal = String(b[sortConfig.key] || '').toLowerCase();
+      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -96,21 +125,49 @@ export default function DatasetDetailPage() {
       {/* Tab content */}
       <div style={cardStyle}>
         {tab === 'Data Table' && (
-          dataPoints.length > 0 ? (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>#</th>
-                    {columns.map(col => (
-                      <th key={col} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {dataPoints.map((row: any, i: number) => (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ position: 'relative', width: 300 }}>
+                <Search size={14} style={{ position: 'absolute', left: 12, top: 10, color: 'var(--text-muted)' }} />
+                <input 
+                  type="text" 
+                  placeholder="Search across all columns..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{ 
+                    width: '100%', padding: '8px 12px 8px 32px', borderRadius: 6,
+                    border: '1px solid var(--border-color)', background: 'var(--bg-default)',
+                    color: 'var(--text-primary)', fontSize: 13, outline: 'none'
+                  }}
+                />
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                Showing {processedData.length} of {dataPoints.length} records
+              </div>
+            </div>
+            
+            {processedData.length > 0 ? (
+              <div style={{ overflowX: 'auto', border: '1px solid var(--border-light)', borderRadius: 8 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg-surface-elevated)' }}>
+                      <th style={{ padding: '12px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>#</th>
+                      {columns.map(col => (
+                        <th 
+                          key={col} 
+                          onClick={() => handleSort(col)}
+                          style={{ padding: '12px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none' }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            {col}
+                            <ArrowUpDown size={12} opacity={sortConfig?.key === col ? 1 : 0.3} color={sortConfig?.key === col ? 'var(--color-primary)' : 'currentColor'} />
+                          </div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {processedData.map((row: any, i: number) => (
                     <tr key={i} style={{ borderBottom: '1px solid var(--border-light)' }}>
                       <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-muted)' }}>{i + 1}</td>
                       {columns.map(col => {
@@ -124,12 +181,15 @@ export default function DatasetDetailPage() {
                       })}
                     </tr>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', fontSize: 13 }}>No data points found.</div>
-          )
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', fontSize: 13 }}>
+                {searchQuery ? 'No records match your search.' : 'No data points found.'}
+              </div>
+            )}
+          </div>
         )}
 
         {tab === 'Visualization' && (

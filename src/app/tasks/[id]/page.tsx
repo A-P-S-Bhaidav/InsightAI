@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, Play, Trash2, Download, CheckCircle, XCircle, Clock, Zap, Filter, Shield, Copy, FileOutput, Database, ArrowRight } from 'lucide-react';
+import { Loader2, Play, Trash2, Download, CheckCircle, XCircle, Clock, Zap, Filter, Shield, Copy, FileOutput, Database, ArrowRight, Pause, X } from 'lucide-react';
 import Link from 'next/link';
 
 const cardStyle: React.CSSProperties = {
@@ -36,14 +36,35 @@ export default function TaskDetailPage() {
   const [liveLog, setLiveLog] = useState<string[]>([]);
   const [estimatedTime, setEstimatedTime] = useState<number | null>(null);
 
-  const fetchTask = () => {
-    fetch(`/api/tasks/${params.id}`)
-      .then(r => r.json())
-      .then(d => { setTask(d); setLoading(false); })
-      .catch(() => setLoading(false));
+  const fetchTask = async () => {
+    try {
+      const res = await fetch(`/api/tasks/${params.id}`);
+      const data = await res.json();
+      setTask(data);
+      if (data.logs) {
+        try {
+          const parsedLogs = JSON.parse(data.logs);
+          setLiveLog(parsedLogs.map((l: any) => `[${new Date(l.time).toLocaleTimeString()}] ${l.msg}`));
+        } catch(e) {}
+      }
+      setLoading(false);
+    } catch {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { fetchTask(); }, [params.id]);
+  useEffect(() => { 
+    fetchTask(); 
+    
+    // Polling for live terminal updates
+    const interval = setInterval(() => {
+      if (executing || task?.status === 'running') {
+        fetchTask();
+      }
+    }, 2000);
+    
+    return () => clearInterval(interval);
+  }, [params.id, executing, task?.status]);
 
   const handleExecute = async () => {
     setExecuting(true);
@@ -107,6 +128,21 @@ export default function TaskDetailPage() {
     }
   };
 
+  const handleControl = async (action: 'pause' | 'cancel') => {
+    if (!confirm(`Are you sure you want to ${action} this task?`)) return;
+    try {
+      await fetch(`/api/tasks/${params.id}/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      setExecuting(false);
+      await fetchTask();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirm('Delete this task?')) return;
     setDeleting(true);
@@ -120,6 +156,8 @@ export default function TaskDetailPage() {
       failed: { c: '#ef4444', bg: 'rgba(239,68,68,0.12)', icon: <XCircle size={13} /> },
       running: { c: '#3b82f6', bg: 'rgba(59,130,246,0.12)', icon: <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> },
       pending: { c: '#f59e0b', bg: 'rgba(245,158,11,0.12)', icon: <Clock size={13} /> },
+      paused: { c: '#f59e0b', bg: 'rgba(245,158,11,0.12)', icon: <Pause size={13} /> },
+      cancelled: { c: '#ef4444', bg: 'rgba(239,68,68,0.12)', icon: <X size={13} /> },
     };
     const s = map[status?.toLowerCase()] || { c: 'var(--text-muted)', bg: 'var(--bg-surface-elevated)', icon: null };
     return <span style={{ padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, color: s.c, background: s.bg, display: 'inline-flex', alignItems: 'center', gap: 4 }}>{s.icon}{status}</span>;
@@ -152,24 +190,33 @@ export default function TaskDetailPage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          {(task.status === 'pending' || task.status === 'failed') && (
+          {(task.status === 'pending' || task.status === 'failed' || task.status === 'paused' || task.status === 'cancelled') && (
             <button onClick={handleExecute} disabled={executing} style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8,
               background: 'var(--color-primary)', color: '#fff', border: 'none',
               fontSize: 13, fontWeight: 500, cursor: 'pointer',
             }}>
               {executing ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Play size={14} />}
-              {task.status === 'failed' ? 'Retry' : 'Execute'}
+              {task.status === 'failed' ? 'Retry' : task.status === 'paused' ? 'Resume' : 'Execute'}
             </button>
           )}
           {task.status === 'running' && (
-            <button disabled style={{
-              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8,
-              background: 'var(--bg-surface-elevated)', color: 'var(--text-muted)', border: '1px solid var(--border-color)',
-              fontSize: 13, cursor: 'not-allowed',
-            }}>
-              <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Running...
-            </button>
+            <>
+              <button onClick={() => handleControl('pause')} style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8,
+                background: 'var(--bg-surface-elevated)', color: '#f59e0b', border: '1px solid #f59e0b',
+                fontSize: 13, cursor: 'pointer',
+              }}>
+                <Pause size={14} /> Pause
+              </button>
+              <button onClick={() => handleControl('cancel')} style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8,
+                background: 'var(--bg-surface-elevated)', color: '#ef4444', border: '1px solid #ef4444',
+                fontSize: 13, cursor: 'pointer',
+              }}>
+                <X size={14} /> Cancel
+              </button>
+            </>
           )}
           <button onClick={handleDelete} disabled={deleting} style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8,
@@ -209,13 +256,18 @@ export default function TaskDetailPage() {
                </div>
              )}
           </div>
-          <div style={{ background: 'var(--bg-default)', borderRadius: 8, padding: 16, fontFamily: 'monospace', fontSize: 12, color: 'var(--text-primary)', maxHeight: 200, overflowY: 'auto' }}>
-            {liveLog.map((log, i) => (
-              <div key={i} style={{ marginBottom: 4, display: 'flex', gap: 8 }}>
-                 <span style={{ color: 'var(--color-primary)' }}>[{new Date().toLocaleTimeString()}]</span>
-                 <span>{log}</span>
-              </div>
-            ))}
+          <div style={{ background: '#0a0a0a', borderRadius: 8, padding: 16, fontFamily: 'monospace', fontSize: 12, color: '#e5e5e5', maxHeight: 300, overflowY: 'auto', border: '1px solid #333' }}>
+            {liveLog.map((log, i) => {
+              const isTime = log.startsWith('[');
+              const timeStr = isTime ? log.split(']')[0] + ']' : `[${new Date().toLocaleTimeString()}]`;
+              const msg = isTime ? log.slice(log.indexOf(']') + 1).trim() : log;
+              return (
+                <div key={i} style={{ marginBottom: 4, display: 'flex', gap: 8, lineHeight: 1.5 }}>
+                  <span style={{ color: '#0ea5e9', flexShrink: 0 }}>{timeStr}</span>
+                  <span>{msg}</span>
+                </div>
+              );
+            })}
             {executing && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', marginTop: 8 }}>
                 <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Processing next step...

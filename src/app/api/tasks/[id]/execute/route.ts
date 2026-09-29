@@ -31,6 +31,35 @@ export async function POST(
 
     if (!task) return NextResponse.json({ error: 'Task not found' }, { status: 404 });
 
+    // Handle pause/cancel commands
+    if (action === 'pause') {
+      await prisma.task.update({ where: { id }, data: { status: 'paused', errorMessage: 'Task paused by user.' } });
+      const workflow = task.workflows?.[0];
+      if (workflow) await prisma.workflow.update({ where: { id: workflow.id }, data: { status: 'paused' } });
+      return NextResponse.json({ message: 'Task paused successfully' });
+    }
+    
+    if (action === 'cancel') {
+      await prisma.task.update({ where: { id }, data: { status: 'cancelled', errorMessage: 'Task cancelled by user.' } });
+      const workflow = task.workflows?.[0];
+      if (workflow) await prisma.workflow.update({ where: { id: workflow.id }, data: { status: 'cancelled' } });
+      return NextResponse.json({ message: 'Task cancelled successfully' });
+    }
+
+    // Check if task is paused or cancelled before doing work
+    if (task.status === 'paused' || task.status === 'cancelled') {
+      return NextResponse.json({ nextAction: 'halt', message: `Task is ${task.status}. Halting execution.` });
+    }
+
+    // Helper to log real-time messages
+    const logAction = async (msg: string) => {
+      try {
+        const logs = JSON.parse(task.logs || '[]');
+        logs.push({ time: new Date().toISOString(), msg });
+        await prisma.task.update({ where: { id }, data: { logs: JSON.stringify(logs) } });
+      } catch (e) { /* ignore */ }
+    };
+
     // Helper to update workflow step status
     const updateStep = async (type: string, status: string, output?: any) => {
       const step = task.workflows?.[0]?.steps?.find((s: any) => s.type === type);
@@ -44,8 +73,20 @@ export async function POST(
 
     // ACTION: START
     if (action === 'start') {
-      await prisma.task.update({ where: { id }, data: { status: 'running' } });
+      await logAction('Starting extraction engine...');
+      await prisma.task.update({ where: { id }, data: { status: 'running', errorMessage: null } });
       const parsedPrompt = await parsePrompt(task.prompt);
+      
+      if (parsedPrompt.needsClarification) {
+        await logAction(`Ambiguity detected. AI requires clarification: ${parsedPrompt.clarifyingQuestion}`);
+        await prisma.task.update({ 
+          where: { id }, 
+          data: { status: 'paused', errorMessage: `Clarification needed: ${parsedPrompt.clarifyingQuestion}` } 
+        });
+        return NextResponse.json({ nextAction: 'halt', message: 'Prompt ambiguous. Waiting for user input.' });
+      }
+      
+      await logAction(`Parsed prompt successfully. Target: ${parsedPrompt.dataType}`);
       
       const stepNames = [
         { name: 'Research Planning', type: 'plan', order: 1 },
@@ -98,7 +139,9 @@ export async function POST(
     // ACTION: PLAN
     if (action === 'plan') {
       await updateStep('plan', 'running');
+      await logAction(`Generating dynamic research plan for ${parsedPrompt.dataType}...`);
       const plan = await createResearchPlan(parsedPrompt, columns, task.priority);
+      await logAction(`Generated ${plan.searchQueries.length} search queries to execute.`);
       
       await prisma.workflow.update({
         where: { id: workflow.id },
@@ -112,6 +155,7 @@ export async function POST(
     // ACTION: BASELINE
     if (action === 'baseline') {
       await updateStep('transform', 'running');
+      await logAction(`Generating AI baseline records for missing data...`);
       
       const desc = (parsedPrompt.description || '').toLowerCase();
       const keywords = (parsedPrompt.keywords || []).map((k: string) => k.toLowerCase()).join(' ');
@@ -163,6 +207,11 @@ export async function POST(
       const plan = config.plan;
       const queryIndex = body.queryIndex || 0;
       const resultIndex = body.resultIndex || 0;
+      const query = plan.searchQueries?.[queryIndex];
+      
+      if (resultIndex === 0 && query) {
+        await logAction(`Executing deep web search for: "${query}"`);
+      }
       
       // Early exit if target count is reached
       if (parsedPrompt.targetCount) {
@@ -178,7 +227,6 @@ export async function POST(
         return NextResponse.json({ nextAction: 'finalize', message: 'Completed all searches' });
       }
 
-      const query = plan.searchQueries[queryIndex];
       const results = await webSearch(query, 8); // fetch more results
       
       // Determine scraping depth based on volume requested
@@ -208,9 +256,19 @@ export async function POST(
 
           const extracted = await extractStructuredData(content.text, columns, parsedPrompt.description, result.url);
           
+          if (extracted.length > 0) {
+            await logAction(`Extracted ${extracted.length} records from ${result.url}`);
+          }
+          
           for (const record of extracted) {
             await prisma.dataPoint.create({
-              data: { datasetId: dataset.id, data: JSON.stringify(record), confidence: 0.8, sourceId: source.id }
+              data: { 
+                datasetId: dataset.id, 
+                data: JSON.stringify(record), 
+                confidence: 0.8, 
+                sourceId: source.id,
+                evidenceSnippet: record._evidence || null 
+              }
             });
           }
           pagesProcessed++;
@@ -234,9 +292,19 @@ export async function POST(
 
             const subExtracted = await extractStructuredData(subContent.text, columns, parsedPrompt.description, link);
             
+            if (subExtracted.length > 0) {
+              await logAction(`Deep crawling: Extracted ${subExtracted.length} records from ${link}`);
+            }
+
             for (const record of subExtracted) {
               await prisma.dataPoint.create({
-                data: { datasetId: dataset.id, data: JSON.stringify(record), confidence: 0.85, sourceId: subSource.id }
+                data: { 
+                  datasetId: dataset.id, 
+                  data: JSON.stringify(record), 
+                  confidence: 0.85, 
+                  sourceId: subSource.id,
+                  evidenceSnippet: record._evidence || null
+                }
               });
             }
             pagesProcessed++;
@@ -270,6 +338,7 @@ export async function POST(
     if (action === 'finalize') {
       await updateStep('transform', 'completed');
       await updateStep('validate', 'running');
+      await logAction(`Extraction complete. Starting semantic deduplication and strict validation...`);
       
       // Load all points, deduplicate, compute score
       const points = await prisma.dataPoint.findMany({ where: { datasetId: dataset.id } });
@@ -286,9 +355,18 @@ export async function POST(
       
       for (const record of merged) {
         const sourceId = record._sourceId;
-        delete record._sourceId; // Remove internal field before saving
+        const evidenceSnippet = record._evidenceSnippet;
+        delete record._sourceId;
+        delete record._evidenceSnippet;
+        delete record._evidence;
         await prisma.dataPoint.create({
-          data: { datasetId: dataset.id, data: JSON.stringify(record), confidence: 0.85, sourceId: sourceId || null }
+          data: { 
+            datasetId: dataset.id, 
+            data: JSON.stringify(record), 
+            confidence: 0.85, 
+            sourceId: sourceId || null,
+            evidenceSnippet: evidenceSnippet || null
+          }
         });
       }
 
@@ -312,6 +390,7 @@ export async function POST(
         where: { id },
         data: { status: 'completed' }
       });
+      await logAction(`Task finalized successfully. Dataset created with ${merged.length} rows.`);
 
       return NextResponse.json({ nextAction: 'done', message: `Finalized ${merged.length} records` });
     }

@@ -29,15 +29,21 @@ INSTRUCTIONS:
 1. Find ALL records/entries that match the task requirements
 2. Extract data for EACH required column
 3. If a value is missing, use "" (empty string). DO NOT drop the row if some columns are missing.
-4. Return a JSON array of objects
-5. Each object must have keys matching the REQUIRED COLUMNS exactly (case-sensitive)
-6. Return ONLY valid JSON — no markdown, no explanation, no backticks
-7. Extract REAL data from the page. Do NOT fabricate values, but do include partial records if you find them.
+4. Return a JSON array of objects.
+5. Each object MUST have keys matching the REQUIRED COLUMNS exactly (case-sensitive).
+6. Each object MUST also include a special key "_evidence" containing the exact, literal quote or HTML snippet from the text that proves this data is real.
+7. Return ONLY valid JSON — no markdown, no explanation, no backticks.
 8. AGGRESSIVE EXTRACTION: We need volume. Extract every possible matching entity you can find on the page.
-9. STRICT ENFORCEMENT ON DATES: If the task specifies a year (e.g. 2026) or a timeframe (e.g. "recent"), you MUST completely IGNORE and DROP any records from older years (like 2022, 2024, etc.). DO NOT extract outdated records under any circumstances.
+9. STRICT ENFORCEMENT ON DATES: If the task specifies a timeframe, you MUST IGNORE any outdated records.
 
 Example response format:
-[{"${columns[0]}": "value1", "${columns.length > 1 ? columns[1] : 'col2'}": "value2"}]`;
+[
+  {
+    "${columns[0]}": "value1", 
+    "${columns.length > 1 ? columns[1] : 'col2'}": "value2",
+    "_evidence": "Exact quote from the text showing value1 and value2"
+  }
+]`;
 
     const response = await generateAIContent(
       'You are a high-volume data extractor. Return ONLY a valid JSON array. No markdown. Extract every matching record you can find, even if partial.',
@@ -81,9 +87,10 @@ Example response format:
         record[col] = String(val).trim();
       }
       record['_source'] = sourceUrl;
+      record['_evidence'] = row['_evidence'] || '';
       return record;
     }).filter(row => {
-      // Keep rows where at least ONE column has data
+      // Keep rows where at least ONE user column has data
       return columns.some(col => row[col] && row[col].length > 0);
     });
 
@@ -96,25 +103,85 @@ Example response format:
 }
 
 /**
- * Merge and deduplicate extracted records from multiple sources
+ * Calculate Levenshtein distance between two strings
+ */
+function levenshteinDistance(a: string, b: string): number {
+  const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+  for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+  for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return matrix[a.length][b.length];
+}
+
+/**
+ * Merge and deduplicate extracted records from multiple sources using Fuzzy Matching
  */
 export function mergeRecords(
   allRecords: Record<string, string>[],
   columns: string[]
 ): Record<string, string>[] {
-  const seen = new Set<string>();
   const merged: Record<string, string>[] = [];
 
   for (const record of allRecords) {
-    // Create a dedup key from ALL non-empty columns to prevent collisions
-    const keyParts = columns
+    // Generate a core identity string for this record
+    const identityString = columns
       .map(col => (record[col] || '').toLowerCase().trim())
-      .filter(v => v.length > 0);
-    
-    const key = keyParts.join('|');
-    if (key.length > 0 && !seen.has(key)) {
-      seen.add(key);
-      merged.push(record);
+      .filter(v => v.length > 0)
+      .join(' ');
+
+    if (!identityString) continue;
+
+    let isDuplicate = false;
+    for (const existing of merged) {
+      const existingIdentity = columns
+        .map(col => (existing[col] || '').toLowerCase().trim())
+        .filter(v => v.length > 0)
+        .join(' ');
+        
+      if (!existingIdentity) continue;
+
+      // Calculate fuzzy match similarity
+      const distance = levenshteinDistance(identityString, existingIdentity);
+      const maxLength = Math.max(identityString.length, existingIdentity.length);
+      const similarity = 1 - (distance / maxLength);
+
+      // If similarity > 85%, consider it a duplicate and merge missing fields
+      if (similarity > 0.85) {
+        isDuplicate = true;
+        
+        // Merge missing fields into the existing record
+        for (const col of columns) {
+          if (!existing[col] && record[col]) {
+            existing[col] = record[col];
+          }
+        }
+        
+        // Prefer the record with the most evidence
+        if (!existing['_evidenceSnippet'] && record['_evidence']) {
+          existing['_evidenceSnippet'] = record['_evidence'];
+        }
+        break;
+      }
+    }
+
+    if (!isDuplicate) {
+      // Map _evidence to _evidenceSnippet for the final schema
+      const finalRecord = { ...record };
+      if (finalRecord['_evidence']) {
+        finalRecord['_evidenceSnippet'] = finalRecord['_evidence'];
+        delete finalRecord['_evidence'];
+      }
+      merged.push(finalRecord);
     }
   }
 

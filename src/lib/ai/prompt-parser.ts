@@ -10,6 +10,8 @@ export interface ParsedPrompt {
   targetCount: number | null;
   description: string;
   columns: string[];
+  needsClarification: boolean;
+  clarifyingQuestion: string | null;
 }
 
 export async function parsePrompt(prompt: string): Promise<ParsedPrompt> {
@@ -28,7 +30,9 @@ Return ONLY a JSON object with NO markdown, NO backticks:
   "constraints": ["any limitations mentioned"],
   "targetCount": null,
   "description": "concise summary of what data to collect",
-  "columns": ["list of column names the user wants, e.g. 'Founder Name', 'Company', 'Email', 'LinkedIn URL'"]
+  "columns": ["list of column names the user wants, e.g. 'Founder Name', 'Company', 'Email', 'LinkedIn URL'"],
+  "needsClarification": boolean, // true ONLY if the request is absurdly broad (e.g. 'get data') and impossible to execute without more context
+  "clarifyingQuestion": "string | null - if needsClarification is true, ask exactly what parameters are missing"
 }
 
 Example for "Get me founders of AI startups with their emails":
@@ -41,7 +45,9 @@ Example for "Get me founders of AI startups with their emails":
   "constraints": [],
   "targetCount": null,
   "description": "Contact information for founders of AI/deep tech startups including email and LinkedIn",
-  "columns": ["Founder Name", "Company Name", "Email", "LinkedIn URL", "Industry", "Location"]
+  "columns": ["Founder Name", "Company Name", "Email", "LinkedIn URL", "Industry", "Location"],
+  "needsClarification": false,
+  "clarifyingQuestion": null
 }`;
   try {
     const responseText = await generateAIContent(systemInstruction, prompt, 'reasoning');
@@ -118,5 +124,7 @@ function generateFallback(prompt: string): ParsedPrompt {
     targetCount: null,
     description: prompt,
     columns: inferColumns(prompt),
+    needsClarification: false,
+    clarifyingQuestion: null,
   };
 }
