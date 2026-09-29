@@ -136,7 +136,7 @@ export default function SignupPage() {
         </div>
 
         {/* Right Side - Signup Form */}
-        <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--color-bg-card, #12121a)', overflowY: 'auto' }}>
+        <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--bg-surface)', overflowY: 'auto', color: 'var(--text-primary)' }}>
           <div style={{ marginBottom: '2rem' }}>
             <h2 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Create an account</h2>
             <p style={{ color: 'var(--text-secondary)' }}>Enter your details to get started</p>

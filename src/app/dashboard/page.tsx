@@ -84,7 +84,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats grid — full width, 4 equal columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, flexShrink: 0 }}>
+      <div className="grid-4" style={{ gap: 16, flexShrink: 0 }}>
         {stats.map((s, i) => (
           <div key={i} style={cardStyle}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
@@ -103,7 +103,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Two columns — Recent Tasks + Quick Actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, flex: 1 }}>
+      <div className="grid-2" style={{ gap: 16, flex: 1 }}>
         {/* Recent Tasks */}
         <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>

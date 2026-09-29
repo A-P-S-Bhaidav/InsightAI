@@ -92,7 +92,7 @@ function LoginForm() {
         </div>
 
         {/* Right Side - Login Form */}
-        <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--bg-surface)' }}>
+        <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}>
           <div style={{ marginBottom: '2rem' }}>
             <h2 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Welcome back</h2>
             <p style={{ color: 'var(--text-secondary)' }}>Sign in to continue to your dashboard</p>

@@ -206,7 +206,7 @@ export default function LandingPage() {
       </section>
 
       {/* Section 4: How It Works */}
-      <section style={{ backgroundColor: 'var(--bg-surface)', overflow: 'hidden' }}>
+      <section id="how-it-works" style={{ backgroundColor: 'var(--bg-surface)', overflow: 'hidden' }}>
         <div className="section-container">
           <div className="reveal" style={{ textAlign: 'center', marginBottom: '5rem' }}>
             <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>How It Works</h2>
