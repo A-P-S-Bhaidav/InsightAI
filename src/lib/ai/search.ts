@@ -277,9 +277,14 @@ function generateSyntheticResults(query: string): SearchResult[] {
       { title: `${query} - Wikipedia`, url: `https://en.wikipedia.org/wiki/List_of_unicorn_startup_companies`, snippet: 'List of unicorn startups', domain: 'en.wikipedia.org' },
       { title: `${query} - Forbes`, url: `https://www.forbes.com/search/?q=${encodeURIComponent(query)}`, snippet: 'Forbes business search', domain: 'www.forbes.com' },
     );
-  } else if (lower.includes('job') || lower.includes('hiring')) {
+  } else if (lower.includes('job') || lower.includes('hiring') || lower.includes('engineer') || lower.includes('salary') || lower.includes('lpa') || lower.includes('openings') || lower.includes('vacancy') || lower.includes('career') || lower.match(/\b(ml|ai|data scientist|developer)\b/)) {
+    // Broad job-related query detection
+    const searchTerm = encodeURIComponent(query.replace(/site:\S+/gi, '').trim());
     results.push(
-      { title: `${query} - Indeed`, url: `https://www.indeed.com/jobs?q=${encodeURIComponent(query)}`, snippet: 'Job listings', domain: 'www.indeed.com' },
+      { title: `${query} - LinkedIn Jobs`, url: `https://in.linkedin.com/jobs/search?keywords=${searchTerm}`, snippet: 'LinkedIn job listings', domain: 'in.linkedin.com' },
+      { title: `${query} - Naukri`, url: `https://www.naukri.com/jobs-in-india?k=${searchTerm}`, snippet: 'Naukri job listings', domain: 'www.naukri.com' },
+      { title: `${query} - Indeed India`, url: `https://in.indeed.com/jobs?q=${searchTerm}`, snippet: 'Indeed India job listings', domain: 'in.indeed.com' },
+      { title: `${query} - Glassdoor`, url: `https://www.glassdoor.co.in/Job/jobs.htm?sc.keyword=${searchTerm}`, snippet: 'Glassdoor job listings', domain: 'www.glassdoor.co.in' },
     );
   } else {
     results.push(

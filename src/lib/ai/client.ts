@@ -178,7 +178,7 @@ export async function generateAIContent(
 
   if (taskType === 'extraction') {
     // RAG and JSON Extraction chain
-    providerChain = ['Cohere', 'Groq', 'TogetherAI', 'Gemini'];
+    providerChain = ['Gemini', 'Groq', 'TogetherAI'];
   } else if (taskType === 'reasoning' || taskType === 'general') {
     // Logic, Parsing, and General Reasoning chain
     providerChain = ['Gemini', 'OpenRouter', 'SambaNova', 'HuggingFace', 'Groq'];

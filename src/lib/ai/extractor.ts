@@ -1,5 +1,4 @@
 import { generateAIContent } from './client';
-import fuzzysort from 'fuzzysort';
 
 /**
  * Extract structured data records from raw web page text using LLM
@@ -55,7 +54,7 @@ Example response format:
       .replace(/```json\n?/g, '')
       .replace(/\n?```/g, '')
       .replace(/^[^[]*(\[)/, '$1')  // Remove any text before the first [
-      .replace(/(\])[^]]*$/, '$1')  // Remove any text after the last ]
+      .replace(/(\])[^]*$/, '$1')  // Remove any text after the last ]
       .trim();
 
     // If response doesn't start with [, try to find the JSON array
@@ -100,36 +99,26 @@ Example response format:
   }
 }
 
-
-
 /**
- * Merge and deduplicate extracted records from multiple sources using Fuzzy Matching
+ * Merge and deduplicate extracted records from multiple sources.
+ * Uses exact key matching — keeps FIRST occurrence of each unique record.
  */
 export function mergeRecords(
   allRecords: Record<string, string>[],
   columns: string[]
 ): Record<string, string>[] {
+  const seen = new Set<string>();
   const merged: Record<string, string>[] = [];
-  const seen = new Map<string, Record<string, string>>();
 
   for (const record of allRecords) {
-    // Generate a core identity string for this record
-    const key = columns
+    // Create a dedup key from ALL non-empty columns to prevent collisions
+    const keyParts = columns
       .map(col => (record[col] || '').toLowerCase().trim())
-      .filter(v => v.length > 0)
-      .join('|');
-
-    if (!key) continue;
-
-    if (seen.has(key)) {
-      const existing = seen.get(key)!;
-      // Merge missing fields into the existing record
-      for (const col of columns) {
-        if (!existing[col] && record[col]) {
-          existing[col] = record[col];
-        }
-      }
-      seen.set(key, record);
+      .filter(v => v.length > 0);
+    
+    const key = keyParts.join('|');
+    if (key.length > 0 && !seen.has(key)) {
+      seen.add(key);
       merged.push(record);
     }
   }

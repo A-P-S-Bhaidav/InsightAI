@@ -279,7 +279,7 @@ DATA TYPE: ${parsed.dataType}
 COLUMNS NEEDED: ${JSON.stringify(columns)}
 KEYWORDS: ${JSON.stringify(parsed.keywords)}
 
-CRITICAL: The search queries MUST be extremely short, concise, and optimized for search engines (e.g. use quotes and boolean operators like: "AI Engineer" AND "Gurugram" jobs 2026). Do NOT use long conversational sentences as search queries.
+CRITICAL: The search queries MUST be extremely short, concise, and optimized for search engines (e.g. use quotes and boolean operators like: "AI Engineer" AND "Gurugram" jobs 2026). Do NOT use long conversational sentences as search queries. Do NOT use the "site:" operator — it is not supported by our search engine.
 
 Return a JSON object (no markdown, no backticks):
 {

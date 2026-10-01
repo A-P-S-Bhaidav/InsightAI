@@ -159,17 +159,7 @@ export async function POST(
       await updateStep('transform', 'running');
       await logAction(`Generating AI baseline records for missing data...`);
       
-      const desc = (parsedPrompt.description || '').toLowerCase();
-      const keywords = (parsedPrompt.keywords || []).map((k: string) => k.toLowerCase()).join(' ');
-      const combinedText = `${desc} ${keywords}`;
-      
-      // If the user explicitly asks for recent data or specific current/future years, skip LLM baseline completely
-      // because LLMs have a knowledge cutoff and will confidently hallucinate or provide old data.
-      const requiresRecent = /202[4-9]|recent|latest|new|current|up to date|this year/.test(combinedText);
-      
-      if (requiresRecent) {
-        return NextResponse.json({ nextAction: 'search', queryIndex: 0, message: `Skipping AI baseline generation to enforce strict data recency.` });
-      }
+      // LLM baseline always runs — it's the most reliable data source
 
       const baselineIndex = body.baselineIndex || 0;
       const targetCount = parsedPrompt.targetCount || 15;
@@ -229,7 +219,9 @@ export async function POST(
         return NextResponse.json({ nextAction: 'finalize', message: 'Completed all searches' });
       }
 
-      const results = await webSearch(query, 8); // fetch more results
+      // Strip site: operators from queries — DDG doesn't support them well
+      const cleanQuery = query.replace(/\s*site:\S+/gi, '').trim();
+      const results = await webSearch(cleanQuery || query, 8); // fetch more results
       
       // Determine scraping depth based on volume requested
       const isHighVolume = (parsedPrompt.targetCount && parsedPrompt.targetCount > 50) || task.priority === 'high';
