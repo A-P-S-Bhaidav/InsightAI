@@ -40,8 +40,16 @@ export default function DatasetDetailPage() {
   }
 
   const dataset = response.dataset;
-  const dataPoints = (response.dataPoints || []).map((dp: any) => dp.data || {});
+  const dataPoints = (response.dataPoints || []).map((dp: any) => ({
+    ...((typeof dp.data === 'string' ? JSON.parse(dp.data) : dp.data) || {}),
+    _sourceUrl: dp.source?.url || '',
+    _sourceDomain: dp.source?.domain || '',
+    _evidence: dp.evidenceSnippet || '',
+    _confidence: dp.confidence || 0,
+  }));
   const stats = response.stats || {};
+  const qualityBreakdown = response.qualityBreakdown || {};
+  const sourceDistribution = response.sourceDistribution || {};
   const columns = dataPoints.length > 0 ? Object.keys(dataPoints[0]).filter(k => !k.startsWith('_')) : [];
 
   const sources = (response.dataPoints || [])
@@ -164,11 +172,14 @@ export default function DatasetDetailPage() {
                           </div>
                         </th>
                       ))}
+                      <th style={{ padding: '12px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>
+                        Source
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {processedData.map((row: any, i: number) => (
-                    <tr key={i} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                    <tr key={i} title={row._evidence || undefined} style={{ borderBottom: '1px solid var(--border-light)' }}>
                       <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-muted)' }}>{i + 1}</td>
                       {columns.map(col => {
                         const val = String(row[col] ?? '');
@@ -179,6 +190,13 @@ export default function DatasetDetailPage() {
                           </td>
                         );
                       })}
+                      <td style={{ padding: '8px 12px', fontSize: 13, color: 'var(--text-primary)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {row._sourceUrl ? (
+                          <a href={row._sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
+                            {row._sourceDomain || 'Source'}
+                          </a>
+                        ) : '-'}
+                      </td>
                     </tr>
                   ))}
                   </tbody>
@@ -194,6 +212,53 @@ export default function DatasetDetailPage() {
 
         {tab === 'Visualization' && (
           <div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
+              {/* Quality Breakdown */}
+              <div style={{ background: 'var(--bg-surface-elevated)', borderRadius: 8, padding: 16, border: '1px solid var(--border-light)' }}>
+                <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px 0' }}>Quality Breakdown</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {['Completeness', 'Consistency', 'Accuracy'].map(metric => {
+                    const key = metric.toLowerCase();
+                    const score = Math.round(qualityBreakdown[key] ?? dataset.qualityScore ?? 0);
+                    const color = score > 80 ? '#10b981' : score > 50 ? '#f59e0b' : '#ef4444';
+                    return (
+                      <div key={metric}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4, color: 'var(--text-primary)' }}>
+                          <span>{metric}</span>
+                          <span style={{ fontWeight: 600 }}>{score}%</span>
+                        </div>
+                        <div style={{ height: 6, borderRadius: 3, background: 'var(--border-color)' }}>
+                          <div style={{ height: '100%', borderRadius: 3, background: color, width: `${Math.min(100, score)}%`, transition: 'width 500ms' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Source Distribution */}
+              <div style={{ background: 'var(--bg-surface-elevated)', borderRadius: 8, padding: 16, border: '1px solid var(--border-light)' }}>
+                <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px 0' }}>Source Distribution</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {(() => {
+                    const sortedDomains = Object.entries(sourceDistribution).sort((a: any, b: any) => b[1] - a[1]).slice(0, 8);
+                    if (sortedDomains.length === 0) return <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>No source data available</div>;
+                    const max = Math.max(...sortedDomains.map((d: any) => d[1]));
+                    return sortedDomains.map(([domain, count]: any) => (
+                      <div key={domain}>
+                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4, color: 'var(--text-primary)' }}>
+                          <span style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{domain}</span>
+                          <span style={{ fontWeight: 500 }}>{count} records</span>
+                        </div>
+                        <div style={{ height: 6, borderRadius: 3, background: 'var(--border-color)' }}>
+                          <div style={{ height: '100%', borderRadius: 3, background: domain === 'AI Knowledge Base' ? '#f59e0b' : '#10b981', width: `${(count / max) * 100}%`, transition: 'width 500ms' }} />
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+            </div>
+
             <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px 0' }}>Field Statistics</h3>
             {Object.keys(stats).length > 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>

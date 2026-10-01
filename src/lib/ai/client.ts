@@ -184,14 +184,27 @@ export async function generateAIContent(
     providerChain = ['Gemini', 'OpenRouter', 'SambaNova', 'HuggingFace', 'Groq'];
   }
 
-  // Execute the chain
+  // Execute the chain with retry logic
   let lastError: any = null;
   for (const provider of providerChain) {
-    try {
-      return await callProvider(provider, systemPrompt, userPrompt);
-    } catch (error: any) {
-      console.warn(`[AI Client] Provider ${provider} skipped or failed:`, error.message || error);
-      lastError = error;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        return await callProvider(provider, systemPrompt, userPrompt);
+      } catch (error: any) {
+        const isRetryable = error.status === 429 || error.status === 503 || 
+          error.message?.includes('rate') || error.message?.includes('timeout') ||
+          error.message?.includes('503') || error.message?.includes('429');
+        
+        if (attempt === 1 && isRetryable) {
+          console.warn(`[AI Client] Provider ${provider} returned retryable error, retrying in ${attempt * 1500}ms...`);
+          await sleep(attempt * 1500);
+          continue;
+        }
+        
+        console.warn(`[AI Client] Provider ${provider} skipped or failed:`, error.message || error);
+        lastError = error;
+        break; // Move to next provider
+      }
     }
   }
 

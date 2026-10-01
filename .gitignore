@@ -54,3 +54,4 @@ Thumbs.db
 # Agent workspaces
 .gemini/
 .agents/
+*.test-*

@@ -17,6 +17,9 @@ export interface SearchResult {
 export async function webSearch(query: string, maxResults: number = 8): Promise<SearchResult[]> {
   console.log(`[WebSearch] Searching: "${query}"`);
 
+  // Helper for rate limiting between requests
+  const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
   // Strategy 1: Firecrawl API (Enterprise grade)
   if (process.env.FIRECRAWL_API_KEY) {
     const results = await searchViaFirecrawl(query, maxResults);
@@ -24,6 +27,7 @@ export async function webSearch(query: string, maxResults: number = 8): Promise<
       console.log(`[WebSearch] Firecrawl returned ${results.length} results`);
       return results;
     }
+    await sleep(300);
   }
 
   // Strategy 2: Serper.dev (Google Search)
@@ -33,23 +37,35 @@ export async function webSearch(query: string, maxResults: number = 8): Promise<
       console.log(`[WebSearch] Serper returned ${results.length} results`);
       return results;
     }
+    await sleep(300);
   }
 
-  // Strategy 3: DuckDuckGo JSON (instant answers)
+  // Strategy 3: Brave Search API (free tier: 2000 queries/month)
+  if (process.env.BRAVE_API_KEY) {
+    const results = await searchViaBrave(query, maxResults);
+    if (results.length > 0) {
+      console.log(`[WebSearch] Brave returned ${results.length} results`);
+      return results;
+    }
+    await sleep(300);
+  }
+
+  // Strategy 4: DuckDuckGo JSON (instant answers)
   const ddgJsonResults = await searchViaDDGJson(query, maxResults);
   if (ddgJsonResults.length > 0) {
     console.log(`[WebSearch] DDG JSON returned ${ddgJsonResults.length} results`);
     return ddgJsonResults;
   }
+  await sleep(500);
 
-  // Strategy 4: DuckDuckGo HTML scraping (fallback)
+  // Strategy 5: DuckDuckGo HTML scraping (fallback)
   const ddgHtmlResults = await searchViaDDGHtml(query, maxResults);
   if (ddgHtmlResults.length > 0) {
     console.log(`[WebSearch] DDG HTML returned ${ddgHtmlResults.length} results`);
     return ddgHtmlResults;
   }
 
-  // Strategy 5: Generate synthetic search URLs from known data sources
+  // Strategy 6: Generate synthetic search URLs from known data sources
   console.warn(`[WebSearch] All search providers failed. Using synthetic URLs.`);
   return generateSyntheticResults(query);
 }
@@ -128,6 +144,44 @@ async function searchViaFirecrawl(query: string, maxResults: number): Promise<Se
     });
   } catch (error) {
     console.error('[WebSearch] Firecrawl search failed:', error);
+    return [];
+  }
+}
+
+/**
+ * Brave Search API — Free tier with 2000 queries/month
+ */
+async function searchViaBrave(query: string, maxResults: number): Promise<SearchResult[]> {
+  try {
+    const response = await fetch(`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${maxResults}`, {
+      headers: {
+        'Accept': 'application/json',
+        'Accept-Encoding': 'gzip',
+        'X-Subscription-Token': process.env.BRAVE_API_KEY!,
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!response.ok) {
+      console.warn(`[WebSearch] Brave returned ${response.status}`);
+      return [];
+    }
+
+    const data = await response.json();
+    const webResults = data.web?.results || [];
+
+    return webResults.map((item: any) => {
+      let domain = '';
+      try { domain = new URL(item.url).hostname; } catch { /* */ }
+      return {
+        title: item.title || '',
+        url: item.url || '',
+        snippet: item.description || '',
+        domain,
+      };
+    });
+  } catch (error) {
+    console.error('[WebSearch] Brave search failed:', error);
     return [];
   }
 }

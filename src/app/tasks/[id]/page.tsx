@@ -313,7 +313,12 @@ export default function TaskDetailPage() {
                         {isCompleted ? <CheckCircle size={14} /> : isRunning ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : isFailed ? <XCircle size={14} color="#ef4444" /> : STEP_ICONS[step.type] || <Zap size={14} />}
                       </div>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>{step.name}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {step.name}
+                          <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 10, background: isCompleted ? '#10b98122' : isFailed ? '#ef444422' : isRunning ? '#3b82f622' : 'var(--bg-surface-elevated)', color: isCompleted ? '#10b981' : isFailed ? '#ef4444' : isRunning ? '#3b82f6' : 'var(--text-muted)' }}>
+                            {step.status}
+                          </span>
+                        </div>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{step.type}</div>
                       </div>
                     </div>
@@ -328,9 +333,21 @@ export default function TaskDetailPage() {
                     )}
 
                     {/* Timing */}
-                    {step.completedAt && step.startedAt && (
-                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                        {((new Date(step.completedAt).getTime() - new Date(step.startedAt).getTime()) / 1000).toFixed(1)}s
+                    {step.startedAt && (
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', borderTop: '1px solid var(--border-light)', paddingTop: 6, marginTop: 4 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                          <span>Start:</span> <span>{new Date(step.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                        </div>
+                        {step.completedAt && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                            <span>End:</span> <span>{new Date(step.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                          </div>
+                        )}
+                        {step.completedAt && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-primary)', fontWeight: 500 }}>
+                            <span>Duration:</span> <span>{((new Date(step.completedAt).getTime() - new Date(step.startedAt).getTime()) / 1000).toFixed(1)}s</span>
+                          </div>
+                        )}
                       </div>
                     )}
 

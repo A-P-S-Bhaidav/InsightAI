@@ -6,6 +6,7 @@ import { generateDataFromLLMKnowledge, createResearchPlan } from '@/lib/ai/agent
 import { webSearch, fetchPageContent, extractInternalLinks } from '@/lib/ai/search';
 import { extractStructuredData, mergeRecords } from '@/lib/ai/extractor';
 import { validateData } from '@/lib/ai/data-validator';
+import { processPipeline } from '@/lib/scraper/pipeline';
 
 export const maxDuration = 60;
 
@@ -176,7 +177,7 @@ export async function POST(
       
       for (const record of llmData) {
         await prisma.dataPoint.create({
-          data: { datasetId: dataset.id, data: record as any, confidence: 0.9, sourceId: null }
+          data: { datasetId: dataset.id, data: record as any, confidence: 0.65, sourceId: null, evidenceSnippet: 'Generated from AI knowledge base' }
         });
       }
       
@@ -340,17 +341,22 @@ export async function POST(
         const dataRaw = p.data as any;
         const data = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw || {};
         data._sourceId = p.sourceId; // Inject sourceId to preserve it through merge
+        data._evidence = p.evidenceSnippet;
         return data;
       });
       
-      const merged = mergeRecords(rawRecords, columns);
+      const pipelineResult = processPipeline(rawRecords);
+      const cleanedRecords = pipelineResult.data;
+      await logAction(`Pipeline cleaning: ${pipelineResult.stats.inputCount} → ${pipelineResult.stats.outputCount} records (removed ${pipelineResult.stats.duplicatesRemoved} duplicates, ${pipelineResult.stats.invalidRemoved} invalid)`);
+
+      const merged = mergeRecords(cleanedRecords as Record<string, string>[], columns);
       
       // Delete old points and insert clean ones
       await prisma.dataPoint.deleteMany({ where: { datasetId: dataset.id } });
       
       for (const record of merged) {
         const sourceId = record._sourceId;
-        const evidenceSnippet = record._evidenceSnippet;
+        const evidenceSnippet = record._evidence;
         delete record._sourceId;
         delete record._evidenceSnippet;
         delete record._evidence;
@@ -366,7 +372,8 @@ export async function POST(
       }
 
       const qualityReport = await validateData(merged as any);
-      const qualityScore = Math.max(70, Math.round(qualityReport.overallScore));
+      const qualityScore = Math.round(qualityReport.overallScore);
+      await logAction(`Quality breakdown: Completeness=${Math.round(qualityReport.completeness)}%, Consistency=${Math.round(qualityReport.consistency)}%, Accuracy=${Math.round(qualityReport.accuracy)}%`);
 
       await prisma.dataset.update({
         where: { id: dataset.id },

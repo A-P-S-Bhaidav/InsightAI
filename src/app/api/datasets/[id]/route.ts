@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { validateData } from '@/lib/ai/data-validator';
 
 export async function GET(
   request: NextRequest,
@@ -38,7 +39,7 @@ export async function GET(
       data: dp.data as Record<string, unknown> | null
     }));
 
-    // Compute basic statistics on a sample (or all if small enough)
+    // Compute statistics on all points
     const allPoints = await prisma.dataPoint.findMany({ where: { datasetId: id } });
     const parsedAllPoints = allPoints.map(p => ({
       ...p,
@@ -68,11 +69,37 @@ export async function GET(
       }
     }
 
+    // Compute quality breakdown using enterprise validator
+    const allData = parsedAllPoints.map(p => p.data);
+    const qualityReport = await validateData(allData);
+
+    // Compute source distribution
+    const sourceDistribution: Record<string, number> = {};
+    for (const dp of allPoints) {
+      if (dp.sourceId) {
+        const source = rawDbDataPoints.find(r => r.id === dp.id)?.source;
+        const domain = source?.domain || 'Unknown';
+        sourceDistribution[domain] = (sourceDistribution[domain] || 0) + 1;
+      } else {
+        sourceDistribution['AI Knowledge Base'] = (sourceDistribution['AI Knowledge Base'] || 0) + 1;
+      }
+    }
+
     return NextResponse.json({
       dataset,
       dataPoints,
       pagination: { total: totalDataPoints, page, limit },
       stats,
+      qualityBreakdown: {
+        overallScore: qualityReport.overallScore,
+        completeness: qualityReport.completeness,
+        consistency: qualityReport.consistency,
+        accuracy: qualityReport.accuracy,
+        fieldQualities: qualityReport.fieldQualities || [],
+        issues: qualityReport.issues,
+        suggestions: qualityReport.suggestions,
+      },
+      sourceDistribution,
     });
   } catch (error) {
     console.error('Error in GET /api/datasets/[id]:', error);

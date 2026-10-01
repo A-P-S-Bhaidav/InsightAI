@@ -91,6 +91,19 @@ Example response format:
       return columns.some(col => row[col] && row[col].length > 0);
     });
 
+    // After extracting valid records, add evidence from the page
+    for (const record of validRecords) {
+      // Find the first column value that appears in the page text
+      const evidence = columns
+        .map(col => record[col])
+        .filter(val => val && val.length > 3 && pageText.includes(val))
+        .map(val => {
+          const idx = pageText.indexOf(val);
+          return pageText.slice(Math.max(0, idx - 50), Math.min(pageText.length, idx + val.length + 100)).trim();
+        })[0] || '';
+      record['_evidence'] = evidence;
+    }
+
     console.log(`[Extractor] ${validRecords.length} valid records after filtering from ${sourceUrl}`);
     return validRecords;
   } catch (error) {
