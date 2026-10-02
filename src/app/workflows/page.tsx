@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { WorkflowSummary } from '@/types';
 
 const cardStyle: React.CSSProperties = {
   background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
@@ -10,7 +11,7 @@ const cardStyle: React.CSSProperties = {
 };
 
 export default function WorkflowsPage() {
-  const [workflows, setWorkflows] = useState<any[]>([]);
+  const [workflows, setWorkflows] = useState<WorkflowSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,7 +55,7 @@ export default function WorkflowsPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, minHeight: '100%' }}>
-      {workflows.map((wf: any) => (
+      {workflows.map((wf: WorkflowSummary) => (
         <div key={wf.id} style={cardStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{wf.name}</div>

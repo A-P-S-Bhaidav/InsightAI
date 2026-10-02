@@ -867,3 +867,99 @@
   color: inherit;
   text-decoration: none;
 }
+
+
+/* ==========================================================================
+   Landing Page Responsive Breakpoints
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .landing-hero-title {
+    font-size: 2.5rem;
+  }
+  
+  .landing-features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .landing-steps-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .landing-comparison-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .landing-footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .landing-hero-title {
+    font-size: 2rem;
+  }
+  
+  .landing-hero-subtitle {
+    font-size: 1rem;
+  }
+  
+  .landing-features-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .landing-steps-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .landing-nav {
+    gap: 1rem;
+  }
+  
+  .landing-nav-links {
+    display: none;
+  }
+  
+  .landing-hero-actions {
+    flex-direction: column;
+    width: 100%;
+    max-width: 320px;
+  }
+  
+  .landing-hero-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .landing-footer-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  
+  .landing-footer-bottom {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .landing-pricing-grid {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .landing-hero-title {
+    font-size: 1.75rem;
+  }
+  
+  .landing-section-title {
+    font-size: 1.5rem;
+  }
+  
+  .landing-hero {
+    padding: 2rem 1rem;
+  }
+}

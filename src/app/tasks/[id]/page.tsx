@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Loader2, Play, Trash2, Download, CheckCircle, XCircle, Clock, Zap, Filter, Shield, Copy, FileOutput, Database, ArrowRight, Pause, X } from 'lucide-react';
 import Link from 'next/link';
+import { TaskSummary, LogEntry, WorkflowSummary, WorkflowStepSummary, DatasetSummary } from '@/types';
 
 const cardStyle: React.CSSProperties = {
   background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
@@ -29,7 +30,7 @@ const STEP_COLORS: Record<string, string> = {
 export default function TaskDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const [task, setTask] = useState<any>(null);
+  const [task, setTask] = useState<TaskSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [executing, setExecuting] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -44,7 +45,7 @@ export default function TaskDetailPage() {
       if (data.logs) {
         try {
           const parsedLogs = JSON.parse(data.logs);
-          setLiveLog(parsedLogs.map((l: any) => `[${new Date(l.time).toLocaleTimeString()}] ${l.msg}`));
+          setLiveLog(parsedLogs.map((l: LogEntry) => `[${new Date(l.time).toLocaleTimeString()}] ${l.msg}`));
         } catch(e) {}
       }
       setLoading(false);
@@ -77,7 +78,7 @@ export default function TaskDetailPage() {
 
     try {
       let currentAction = 'start';
-      let currentPayload: any = {};
+      let currentPayload: Record<string, unknown> = {};
       
       while (currentAction !== 'done') {
         const res = await fetch(`/api/tasks/${params.id}/execute`, {
@@ -117,9 +118,9 @@ export default function TaskDetailPage() {
           break; // Fallback exit
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setLiveLog(prev => [...prev, `Error: ${err.message}`]);
+      setLiveLog(prev => [...prev, `Error: ${err instanceof Error ? err.message : 'Unknown'}`]);
     } finally {
       clearInterval(timer);
       setExecuting(false);
@@ -173,8 +174,8 @@ export default function TaskDetailPage() {
     return <div style={{ ...cardStyle, textAlign: 'center', padding: 60, color: 'var(--text-muted)', fontSize: 14 }}>Task not found.</div>;
   }
 
-  const allSteps = task.workflows?.flatMap((wf: any) => wf.steps || []) || [];
-  const allDatasets = task.workflows?.flatMap((wf: any) => wf.datasets || []) || [];
+  const allSteps = task.workflows?.flatMap((wf: WorkflowSummary) => wf.steps || []) || [];
+  const allDatasets = task.workflows?.flatMap((wf: WorkflowSummary) => wf.datasets || []) || [];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -190,7 +191,7 @@ export default function TaskDetailPage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          {(task.status === 'pending' || task.status === 'failed' || task.status === 'paused' || task.status === 'cancelled') && (
+          {(['pending', 'failed', 'paused', 'cancelled'].includes(task.status)) && (
             <button onClick={handleExecute} disabled={executing} style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8,
               background: 'var(--color-primary)', color: '#fff', border: 'none',
@@ -284,13 +285,13 @@ export default function TaskDetailPage() {
 
           {/* Horizontal pipeline */}
           <div style={{ display: 'flex', alignItems: 'stretch', gap: 0, overflowX: 'auto', paddingBottom: 8 }}>
-            {allSteps.sort((a: any, b: any) => a.order - b.order).map((step: any, i: number) => {
+            {allSteps.sort((a: WorkflowStepSummary, b: WorkflowStepSummary) => a.order - b.order).map((step: WorkflowStepSummary, i: number) => {
               const color = STEP_COLORS[step.type] || '#6b7280';
               const isCompleted = step.status === 'completed';
               const isFailed = step.status === 'failed';
               const isRunning = step.status === 'running';
               let output: Record<string, unknown> = {};
-              try { output = JSON.parse(step.output || '{}'); } catch { /* */ }
+              try { output = typeof step.output === 'string' ? JSON.parse(step.output || '{}') : (step.output as Record<string, unknown>) || {}; } catch { /* */ }
 
               return (
                 <React.Fragment key={step.id || i}>
@@ -396,7 +397,7 @@ export default function TaskDetailPage() {
             <Database size={16} color="var(--color-primary)" /> Generated Datasets
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-            {allDatasets.map((ds: any) => (
+            {allDatasets.map((ds: DatasetSummary) => (
               <Link key={ds.id} href={`/datasets/${ds.id}`} style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 padding: 16, borderRadius: 8, background: 'var(--bg-surface-elevated)',

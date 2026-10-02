@@ -67,6 +67,61 @@ function normalizeUrl(url: string): string {
 }
 
 /**
+ * Normalize common date formats to ISO (YYYY-MM-DD).
+ * Returns null if the value doesn't look like a date.
+ */
+function normalizeDate(val: string): string | null {
+  const trimmed = val.trim();
+  if (!trimmed || trimmed.length < 4) return null;
+
+  // Already ISO format (YYYY-MM-DD)
+  if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return trimmed.slice(0, 10);
+
+  // DD/MM/YYYY or DD-MM-YYYY
+  const dmyMatch = trimmed.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  if (dmyMatch) {
+    const [, d, m, y] = dmyMatch;
+    const date = new Date(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`);
+    if (!isNaN(date.getTime())) return date.toISOString().slice(0, 10);
+  }
+
+  // MM/DD/YYYY (US format — disambiguate by checking if month > 12)
+  const mdyMatch = trimmed.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  if (mdyMatch) {
+    const [, m, d, y] = mdyMatch;
+    if (parseInt(m) <= 12) {
+      const date = new Date(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`);
+      if (!isNaN(date.getTime())) return date.toISOString().slice(0, 10);
+    }
+  }
+
+  // "Month DD, YYYY" or "DD Month YYYY"
+  const parsed = Date.parse(trimmed);
+  if (!isNaN(parsed)) {
+    const date = new Date(parsed);
+    // Only accept if it looks reasonable (not epoch-close)
+    if (date.getFullYear() >= 1900 && date.getFullYear() <= 2100) {
+      return date.toISOString().slice(0, 10);
+    }
+  }
+
+  // Relative dates
+  const lower = trimmed.toLowerCase();
+  const now = new Date();
+  if (lower === 'today') return now.toISOString().slice(0, 10);
+  if (lower === 'yesterday') {
+    now.setDate(now.getDate() - 1);
+    return now.toISOString().slice(0, 10);
+  }
+  const daysAgoMatch = lower.match(/^(\d+)\s*days?\s*ago$/);
+  if (daysAgoMatch) {
+    now.setDate(now.getDate() - parseInt(daysAgoMatch[1]));
+    return now.toISOString().slice(0, 10);
+  }
+
+  return null;
+}
+/**
  * Create a fuzzy dedup key that's more resilient than exact JSON.stringify matching.
  * Normalizes whitespace, case, and strips common prefixes/suffixes.
  */
@@ -135,6 +190,15 @@ export function processPipeline(
         if (resolvedConfig.normalizeCase && key.toLowerCase().includes('email')) {
           val = val.toLowerCase();
           stats.fieldsNormalized++;
+        }
+
+        // Normalize dates to ISO format
+        if (resolvedConfig.normalizeDates && /date|posted|created|updated|published|time/i.test(key)) {
+          const normalized = normalizeDate(val);
+          if (normalized) {
+            val = normalized;
+            stats.fieldsNormalized++;
+          }
         }
         
         // Normalize URLs

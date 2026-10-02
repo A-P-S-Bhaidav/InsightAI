@@ -93,7 +93,7 @@ async function searchViaSerper(query: string, maxResults: number): Promise<Searc
     const data = await response.json();
     const organic = data.organic || [];
 
-    return organic.map((item: any) => {
+    return organic.map((item: { title: string; link: string; snippet: string }) => {
       let domain = '';
       try { domain = new URL(item.link).hostname; } catch { /* */ }
       return {
@@ -132,9 +132,9 @@ async function searchViaFirecrawl(query: string, maxResults: number): Promise<Se
     const data = await response.json();
     if (!data.success || !data.data) return [];
 
-    return data.data.map((item: any) => {
+    return data.data.map((item: { title?: string; url?: string; description?: string; content?: string }) => {
       let domain = '';
-      try { domain = new URL(item.url).hostname; } catch { /* */ }
+      try { domain = new URL(item.url || '').hostname; } catch { /* */ }
       return {
         title: item.title || '',
         url: item.url || '',
@@ -170,7 +170,7 @@ async function searchViaBrave(query: string, maxResults: number): Promise<Search
     const data = await response.json();
     const webResults = data.web?.results || [];
 
-    return webResults.map((item: any) => {
+    return webResults.map((item: { title: string; url: string; description: string }) => {
       let domain = '';
       try { domain = new URL(item.url).hostname; } catch { /* */ }
       return {
@@ -381,6 +381,13 @@ export async function fetchPageContent(url: string): Promise<{ text: string; htm
       });
 
       if (response.ok) {
+        // Validate content-type — skip binary files
+        const contentType = response.headers.get('content-type') || '';
+        const isHtmlLike = contentType.includes('text/') || contentType.includes('html') || contentType.includes('xml') || contentType.includes('json') || contentType === '';
+        if (!isHtmlLike) {
+          console.warn(`[WebSearch] Skipping non-text content (${contentType}) for ${url}`);
+          return null;
+        }
         html = await response.text();
         console.log(`[WebSearch] Plain fetch succeeded for ${url} (${html.length} bytes)`);
       } else {

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ListTodo, CheckCircle, Database, TrendingUp, Plus, ArrowRight } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { StatsResponse, TaskSummary } from '@/types';
 
 
 
@@ -15,7 +16,7 @@ const cardStyle: React.CSSProperties = {
 };
 
 export default function DashboardPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<StatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,7 +24,7 @@ export default function DashboardPage() {
       .then(res => res.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(() => {
-        setData({ totalTasks: 0, completedTasks: 0, dataPoints: 0, avgQuality: 0, recentTasks: [] });
+        setData({ totalTasks: 0, completedTasks: 0, runningTasks: 0, totalDatasets: 0, totalDataPoints: 0, averageQualityScore: 0, recentTasks: [], tasksByStatus: {}, tasksOverTime: [] } as StatsResponse);
         setLoading(false);
       });
   }, []);
@@ -57,7 +58,7 @@ export default function DashboardPage() {
         return { name: d.toLocaleDateString('en-US', { weekday: 'short' }), tasks: 0 };
       })
     : (data?.tasksOverTime?.length 
-        ? data.tasksOverTime.map((d: any) => ({
+        ? data.tasksOverTime.map((d: {date:string,count:number}) => ({
             name: new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' }),
             tasks: d.count
           }))
@@ -115,15 +116,15 @@ export default function DashboardPage() {
 
           {loading ? (
             <div style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center', fontSize: 13, flex: 1 }}>Loading...</div>
-          ) : data?.recentTasks?.length > 0 ? (
+          ) : (data?.recentTasks?.length ?? 0) > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              {data.recentTasks.slice(0, 5).map((task: any, i: number) => (
+              {data!.recentTasks.slice(0, 5).map((task: TaskSummary, i: number) => (
                 <Link key={i} href={`/tasks/${task.id}`} style={{ textDecoration: 'none' }}>
                   <div style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     padding: '10px 0', borderBottom: '1px solid var(--border-light)',
                   }}>
-                    <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>{task.title || task.name || `Task #${i + 1}`}</span>
+                    <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>{task.title || `Task #${i + 1}`}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       {badge(task.status || 'pending')}
                       <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/security';
 import prisma from '@/lib/db';
+import { auth } from '@/lib/auth';
 import { parsePrompt } from '@/lib/ai/prompt-parser';
 import { generateDataFromLLMKnowledge, createResearchPlan } from '@/lib/ai/agent';
 import { webSearch, fetchPageContent, extractInternalLinks } from '@/lib/ai/search';
@@ -15,6 +16,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = session.user.id;
+
     const ip = request.headers.get('x-forwarded-for') || 'unknown';
     const allowed = await rateLimit(ip);
     if (!allowed) {
@@ -25,8 +32,8 @@ export async function POST(
     const body = await request.json().catch(() => ({}));
     const action = body.action || 'start';
 
-    const task = await prisma.task.findUnique({
-      where: { id },
+    const task = await prisma.task.findFirst({
+      where: { id, userId },
       include: { workflows: { include: { steps: true, datasets: true } } },
     });
 
@@ -62,12 +69,12 @@ export async function POST(
     };
 
     // Helper to update workflow step status
-    const updateStep = async (type: string, status: string, output?: any) => {
-      const step = task.workflows?.[0]?.steps?.find((s: any) => s.type === type);
+    const updateStep = async (type: string, status: string, output?: Record<string, unknown>) => {
+      const step = task.workflows?.[0]?.steps?.find((s: { type: string }) => s.type === type);
       if (step) {
         await prisma.workflowStep.update({
           where: { id: step.id },
-          data: { status, output: output ? output : undefined, ...(status === 'completed' ? { completedAt: new Date() } : {}) },
+          data: { status, output: output ? (output as Record<string, string>) : undefined, ...(status === 'completed' ? { completedAt: new Date() } : {}) },
         });
       }
     };
@@ -351,25 +358,27 @@ export async function POST(
 
       const merged = mergeRecords(cleanedRecords as Record<string, string>[], columns);
       
-      // Delete old points and insert clean ones
-      await prisma.dataPoint.deleteMany({ where: { datasetId: dataset.id } });
-      
-      for (const record of merged) {
-        const sourceId = record._sourceId;
-        const evidenceSnippet = record._evidence;
-        delete record._sourceId;
-        delete record._evidenceSnippet;
-        delete record._evidence;
-        await prisma.dataPoint.create({
-          data: { 
-            datasetId: dataset.id, 
-            data: record, 
-            confidence: 0.85, 
-            sourceId: sourceId || null,
-            evidenceSnippet: evidenceSnippet || null
-          }
-        });
-      }
+      // Atomic: delete old points and insert clean ones in a transaction
+      await prisma.$transaction(async (tx) => {
+        await tx.dataPoint.deleteMany({ where: { datasetId: dataset.id } });
+        
+        for (const record of merged) {
+          const sourceId = record._sourceId;
+          const evidenceSnippet = record._evidence;
+          delete record._sourceId;
+          delete record._evidenceSnippet;
+          delete record._evidence;
+          await tx.dataPoint.create({
+            data: { 
+              datasetId: dataset.id, 
+              data: record, 
+              confidence: 0.85, 
+              sourceId: sourceId || null,
+              evidenceSnippet: evidenceSnippet || null
+            }
+          });
+        }
+      });
 
       const qualityReport = await validateData(merged as any);
       const qualityScore = Math.round(qualityReport.overallScore);

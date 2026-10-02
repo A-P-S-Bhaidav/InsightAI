@@ -39,6 +39,8 @@ export default function Sidebar({ isMobileOpen, onClose }: { isMobileOpen?: bool
 
   return (
     <aside
+      role="navigation"
+      aria-label="Main navigation"
       className={`sidebar ${isMobileOpen ? 'mobile-open' : ''}`}
       style={{
         width: w,
@@ -57,7 +59,7 @@ export default function Sidebar({ isMobileOpen, onClose }: { isMobileOpen?: bool
         {!isCurrentlyCollapsed && <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>InsightAI</span>}
       </div>
 
-      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, padding: isCurrentlyCollapsed ? '0 8px' : '0 10px', marginTop: 4 }}>
+      <nav aria-label="Primary" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, padding: isCurrentlyCollapsed ? '0 8px' : '0 10px', marginTop: 4 }}>
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href || (item.href !== '/dashboard' && item.href !== '/tasks/new' && pathname.startsWith(item.href + '/'));
           const Icon = item.icon;

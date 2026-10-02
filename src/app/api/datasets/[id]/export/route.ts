@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { auth } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = session.user.id;
+
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'json';
 
-    const dataset = await prisma.dataset.findUnique({ where: { id } });
+    const dataset = await prisma.dataset.findFirst({ 
+      where: { id, workflow: { task: { userId } } } 
+    });
     if (!dataset) {
       return NextResponse.json({ error: 'Dataset not found' }, { status: 404 });
     }

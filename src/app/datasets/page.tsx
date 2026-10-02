@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
+import { DatasetSummary } from '@/types';
 
 const cardStyle: React.CSSProperties = {
   background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
@@ -10,7 +11,7 @@ const cardStyle: React.CSSProperties = {
 };
 
 export default function DatasetsPage() {
-  const [datasets, setDatasets] = useState<any[]>([]);
+  const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,7 +45,7 @@ export default function DatasetsPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: '100%' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-      {datasets.map((ds: any) => (
+      {datasets.map((ds: DatasetSummary) => (
         <Link key={ds.id} href={`/datasets/${ds.id}`} style={{ textDecoration: 'none' }}>
           <div style={cardStyle}>
             <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>{ds.name}</div>

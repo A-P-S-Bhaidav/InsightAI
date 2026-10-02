@@ -26,8 +26,9 @@ async function callProvider(provider: AIProvider, systemPrompt: string, userProm
             console.log('[AI Client] Used provider: Gemini');
             return text;
           }
-        } catch (e: any) {
-          if (attempt === 2 || (e.status !== 429 && e.status !== 503)) throw e;
+        } catch (e: unknown) {
+          const status = (e as { status?: number }).status;
+          if (attempt === 2 || (status !== 429 && status !== 503)) throw e;
           await sleep(1000);
         }
       }
@@ -41,7 +42,7 @@ async function callProvider(provider: AIProvider, systemPrompt: string, userProm
       let models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-8b-8192'];
       try {
         const availableModels = await groq.models.list();
-        const availableIds = availableModels.data.map((m: any) => m.id);
+        const availableIds = availableModels.data.map((m: { id: string }) => m.id);
         const validModels = models.filter(m => availableIds.includes(m));
         if (validModels.length > 0) {
           models = validModels;
@@ -52,7 +53,7 @@ async function callProvider(provider: AIProvider, systemPrompt: string, userProm
       } catch (e) {
         console.warn('[AI Client] Failed to list Groq models:', e);
       }
-      let lastGroqError: any = null;
+      let lastGroqError: unknown = null;
       for (const modelName of models) {
         try {
           const completion = await groq.chat.completions.create({
@@ -61,12 +62,12 @@ async function callProvider(provider: AIProvider, systemPrompt: string, userProm
           });
           console.log(`[AI Client] Used provider: Groq (${modelName})`);
           return completion.choices[0]?.message?.content || '';
-        } catch (e: any) {
+        } catch (e: unknown) {
           lastGroqError = e;
-          console.warn(`[AI Client] Groq model ${modelName} failed:`, e.message || e);
+          console.warn(`[AI Client] Groq model ${modelName} failed:`, e instanceof Error ? e.message : String(e));
         }
       }
-      throw new Error(`Groq failed: ${lastGroqError?.message || 'Unknown error'}`);
+      throw new Error(`Groq failed: ${lastGroqError instanceof Error ? lastGroqError.message : 'Unknown error'}`);
     }
 
     case 'Cohere': {
@@ -185,15 +186,17 @@ export async function generateAIContent(
   }
 
   // Execute the chain with retry logic
-  let lastError: any = null;
+  let lastError: unknown = null;
   for (const provider of providerChain) {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         return await callProvider(provider, systemPrompt, userPrompt);
-      } catch (error: any) {
-        const isRetryable = error.status === 429 || error.status === 503 || 
-          error.message?.includes('rate') || error.message?.includes('timeout') ||
-          error.message?.includes('503') || error.message?.includes('429');
+      } catch (error: unknown) {
+        const status = (error as { status?: number }).status;
+        const errMessage = error instanceof Error ? error.message : String(error);
+        const isRetryable = status === 429 || status === 503 || 
+          errMessage.includes('rate') || errMessage.includes('timeout') ||
+          errMessage.includes('503') || errMessage.includes('429');
         
         if (attempt === 1 && isRetryable) {
           console.warn(`[AI Client] Provider ${provider} returned retryable error, retrying in ${attempt * 1500}ms...`);
@@ -201,12 +204,12 @@ export async function generateAIContent(
           continue;
         }
         
-        console.warn(`[AI Client] Provider ${provider} skipped or failed:`, error.message || error);
+        console.warn(`[AI Client] Provider ${provider} skipped or failed:`, errMessage);
         lastError = error;
         break; // Move to next provider
       }
     }
   }
 
-  throw new Error(`All AI providers in the '${taskType}' chain exhausted. Last error: ${lastError?.message || 'Unknown'}`);
+  throw new Error(`All AI providers in the '${taskType}' chain exhausted. Last error: ${lastError instanceof Error ? lastError.message : 'Unknown'}`);
 }

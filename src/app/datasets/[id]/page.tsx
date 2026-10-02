@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Database, Download, Loader2, Search, ArrowUpDown } from 'lucide-react';
 import Link from 'next/link';
+import { DatasetDetailResponse, DataPointRecord, SourceRecord, QualityBreakdown, StatsResponse } from '@/types';
 
 const cardStyle: React.CSSProperties = {
   background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
@@ -14,7 +15,7 @@ const TABS = ['Data Table', 'Visualization', 'Sources'];
 
 export default function DatasetDetailPage() {
   const { id } = useParams() as { id: string };
-  const [response, setResponse] = useState<any>(null);
+  const [response, setResponse] = useState<DatasetDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('Data Table');
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,7 +41,7 @@ export default function DatasetDetailPage() {
   }
 
   const dataset = response.dataset;
-  const dataPoints = (response.dataPoints || []).map((dp: any) => ({
+  const dataPoints = (response.dataPoints || []).map((dp: DataPointRecord) => ({
     ...((typeof dp.data === 'string' ? JSON.parse(dp.data) : dp.data) || {}),
     _sourceUrl: dp.source?.url || '',
     _sourceDomain: dp.source?.domain || '',
@@ -53,16 +54,16 @@ export default function DatasetDetailPage() {
   const columns = dataPoints.length > 0 ? Object.keys(dataPoints[0]).filter(k => !k.startsWith('_')) : [];
 
   const sources = (response.dataPoints || [])
-    .filter((dp: any) => dp.source)
-    .map((dp: any) => dp.source)
-    .filter((s: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.domain === s.domain) === i);
+    .filter((dp: DataPointRecord) => dp.source)
+    .map((dp: DataPointRecord) => dp.source!)
+    .filter((s: SourceRecord, i: number, arr: SourceRecord[]) => arr.findIndex((x: SourceRecord) => x.domain === s.domain) === i);
 
   // Sorting and filtering logic
   let processedData = [...dataPoints];
   
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
-    processedData = processedData.filter((row: any) => 
+    processedData = processedData.filter((row: Record<string, string>) => 
       columns.some(col => String(row[col] || '').toLowerCase().includes(q))
     );
   }
@@ -178,7 +179,7 @@ export default function DatasetDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {processedData.map((row: any, i: number) => (
+                    {processedData.map((row: Record<string, string>, i: number) => (
                     <tr key={i} title={row._evidence || undefined} style={{ borderBottom: '1px solid var(--border-light)' }}>
                       <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-muted)' }}>{i + 1}</td>
                       {columns.map(col => {
@@ -219,7 +220,7 @@ export default function DatasetDetailPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {['Completeness', 'Consistency', 'Accuracy'].map(metric => {
                     const key = metric.toLowerCase();
-                    const score = Math.round(qualityBreakdown[key] ?? dataset.qualityScore ?? 0);
+                    const score = Math.round((qualityBreakdown as unknown as Record<string, number>)[key] ?? dataset.qualityScore ?? 0);
                     const color = score > 80 ? '#10b981' : score > 50 ? '#f59e0b' : '#ef4444';
                     return (
                       <div key={metric}>
@@ -240,10 +241,10 @@ export default function DatasetDetailPage() {
                 <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px 0' }}>Source Distribution</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {(() => {
-                    const sortedDomains = Object.entries(sourceDistribution).sort((a: any, b: any) => b[1] - a[1]).slice(0, 8);
+                    const sortedDomains = Object.entries(sourceDistribution).sort((a: [string, number], b: [string, number]) => b[1] - a[1]).slice(0, 8);
                     if (sortedDomains.length === 0) return <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>No source data available</div>;
-                    const max = Math.max(...sortedDomains.map((d: any) => d[1]));
-                    return sortedDomains.map(([domain, count]: any) => (
+                    const max = Math.max(...sortedDomains.map((d: [string, number]) => d[1]));
+                    return sortedDomains.map(([domain, count]: [string, number]) => (
                       <div key={domain}>
                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4, color: 'var(--text-primary)' }}>
                           <span style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{domain}</span>
@@ -262,7 +263,7 @@ export default function DatasetDetailPage() {
             <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px 0' }}>Field Statistics</h3>
             {Object.keys(stats).length > 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-                {Object.entries(stats).filter(([k]) => !k.startsWith('_')).map(([field, info]: [string, any]) => (
+                {Object.entries(stats).filter(([k]) => !k.startsWith('_')).map(([field, info]: [string, Record<string, any>]) => (
                   <div key={field} style={{ background: 'var(--bg-surface-elevated)', borderRadius: 8, padding: 16, border: '1px solid var(--border-light)' }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>{field}</div>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -295,7 +296,7 @@ export default function DatasetDetailPage() {
                 <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px 0' }}>Column Coverage</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {columns.map(col => {
-                    const filled = dataPoints.filter((r: any) => r[col] && String(r[col]).length > 0).length;
+                    const filled = dataPoints.filter((r: Record<string, string>) => r[col] && String(r[col]).length > 0).length;
                     const pct = Math.round((filled / dataPoints.length) * 100);
                     return (
                       <div key={col} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -316,7 +317,7 @@ export default function DatasetDetailPage() {
         {tab === 'Sources' && (
           sources.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              {sources.map((s: any, i: number) => (
+              {sources.map((s, i: number) => (
                 <div key={i} style={{ background: 'var(--bg-surface-elevated)', borderRadius: 8, padding: 16, border: '1px solid var(--border-light)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                     <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{s.domain}</span>

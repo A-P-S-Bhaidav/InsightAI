@@ -1,20 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { validateData } from '@/lib/ai/data-validator';
+import { auth } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = session.user.id;
+
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const skip = (page - 1) * limit;
 
-    const dataset = await prisma.dataset.findUnique({
-      where: { id },
+    const dataset = await prisma.dataset.findFirst({
+      where: { id, workflow: { task: { userId } } },
       include: {
         workflow: true,
       },
@@ -112,7 +119,22 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = session.user.id;
+
     const { id } = await params;
+    
+    const dataset = await prisma.dataset.findFirst({
+      where: { id, workflow: { task: { userId } } },
+    });
+    
+    if (!dataset) {
+      return NextResponse.json({ error: 'Dataset not found' }, { status: 404 });
+    }
+
     await prisma.dataset.delete({
       where: { id },
     });

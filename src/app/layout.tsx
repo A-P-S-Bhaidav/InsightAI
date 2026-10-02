@@ -55,6 +55,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#0a0a0f" />
       </head>
       <body className={inter.className}>
+        <a href="#main-content" className="skip-to-content">Skip to main content</a>
         <ThemeProvider>
           <ToastProvider>
             <AppLayoutWrapper>{children}</AppLayoutWrapper>

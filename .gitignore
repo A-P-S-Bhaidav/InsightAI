@@ -55,3 +55,6 @@ Thumbs.db
 .gemini/
 .agents/
 *.test-*
+test-extractor.ts
+test-fetch.ts
+test-search.js

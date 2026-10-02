@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { auth } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = session.user.id;
+
     const [
       totalTasks,
       completedTasks,
@@ -13,23 +20,26 @@ export async function GET(request: NextRequest) {
       recentTasks,
       tasksByStatusRaw,
     ] = await Promise.all([
-      prisma.task.count(),
-      prisma.task.count({ where: { status: 'completed' } }),
-      prisma.task.count({ where: { status: 'running' } }),
-      prisma.dataset.count(),
-      prisma.dataPoint.count(),
+      prisma.task.count({ where: { userId } }),
+      prisma.task.count({ where: { status: 'completed', userId } }),
+      prisma.task.count({ where: { status: 'running', userId } }),
+      prisma.dataset.count({ where: { workflow: { task: { userId } } } }),
+      prisma.dataPoint.count({ where: { dataset: { workflow: { task: { userId } } } } }),
       prisma.dataset.aggregate({
+        where: { workflow: { task: { userId } } },
         _avg: {
           qualityScore: true,
         },
       }),
       prisma.task.findMany({
+        where: { userId },
         take: 5,
         orderBy: { createdAt: 'desc' },
         include: { workflows: true },
       }),
       prisma.task.groupBy({
         by: ['status'],
+        where: { userId },
         _count: {
           id: true,
         },
@@ -50,6 +60,7 @@ export async function GET(request: NextRequest) {
     
     const recentTasksForTime = await prisma.task.findMany({
       where: {
+        userId,
         createdAt: {
           gte: sevenDaysAgo,
         },
@@ -77,6 +88,9 @@ export async function GET(request: NextRequest) {
 
     // Top sources using actual database queries
     const topSourcesRaw = await prisma.source.findMany({
+      where: {
+        dataPoints: { some: { dataset: { workflow: { task: { userId } } } } }
+      },
       take: 5,
       select: { domain: true, _count: { select: { dataPoints: true } } },
       orderBy: { dataPoints: { _count: 'desc' } }

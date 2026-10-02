@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plus, Loader2 } from 'lucide-react';
+import { TaskSummary } from '@/types';
 
 const FILTERS = ['All', 'Pending', 'Running', 'Completed', 'Failed'];
 
@@ -17,7 +18,7 @@ const cardStyle: React.CSSProperties = {
 };
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<TaskSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
 
@@ -90,7 +91,7 @@ export default function TasksPage() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {filtered.map((task: any) => (
+          {filtered.map((task: TaskSummary) => (
             <Link key={task.id} href={`/tasks/${task.id}`} style={cardStyle}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>

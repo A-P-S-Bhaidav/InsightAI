@@ -87,16 +87,16 @@ export async function validateData(
       const strVal = String(val);
       sumLength += strVal.length;
 
-      // Type detection
-      if (/^\d{4}-\d{2}-\d{2}/.test(strVal) || !isNaN(Date.parse(strVal))) {
-        types.date++;
-      } else if (/^https?:\/\//.test(strVal)) {
+      // Type detection — order matters: check number before date since Date.parse('15000') is valid
+      if (/^https?:\/\//.test(strVal)) {
         types.url++;
       } else if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(strVal)) {
         types.email++;
-      } else if (!isNaN(Number(strVal))) {
+      } else if (!isNaN(Number(strVal)) && strVal.trim() !== '') {
         types.number++;
         numericValues.push(Number(strVal));
+      } else if (/^\d{4}-\d{2}-\d{2}/.test(strVal) || (/[a-zA-Z]/.test(strVal) && !isNaN(Date.parse(strVal)))) {
+        types.date++;
       } else {
         types.text++;
       }
@@ -112,7 +112,7 @@ export async function validateData(
     for (const [t, count] of Object.entries(types)) {
       if (count > maxTypeCount) {
         maxTypeCount = count;
-        primaryType = t as any;
+        primaryType = t as FieldQuality['type'];
       }
     }
     if (maxTypeCount < presentCount * 0.8 && presentCount > 0) {
