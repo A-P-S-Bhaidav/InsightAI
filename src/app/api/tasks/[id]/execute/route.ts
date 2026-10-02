@@ -174,7 +174,7 @@ export async function POST(
       
       // Calculate how many baseline loops to do (each loop gets ~15-20 records)
       // Max 10 loops to prevent infinite loops, but enough to get ~200 baseline records if target is huge
-      const targetLoops = Math.min(10, Math.ceil(targetCount / 20));
+      const targetLoops = Math.min(10, Math.ceil(targetCount / 5));
 
       // Fetch existing records to exclude them from generation
       const points = await prisma.dataPoint.findMany({ where: { datasetId: dataset.id, sourceId: null } });
@@ -224,6 +224,12 @@ export async function POST(
       
       if (!plan || !plan.searchQueries || queryIndex >= plan.searchQueries.length) {
         await updateStep('scrape', 'completed');
+        // Check if we still need more data before finalizing
+        const currentCount = await prisma.dataPoint.count({ where: { datasetId: dataset.id } });
+        const targetCount = parsedPrompt.targetCount || 15;
+        if (currentCount < targetCount) {
+          return NextResponse.json({ nextAction: 'fillgap', message: `Searches complete (${currentCount}/${targetCount} rows). Generating additional data...` });
+        }
         return NextResponse.json({ nextAction: 'finalize', message: 'Completed all searches' });
       }
 
@@ -334,6 +340,41 @@ export async function POST(
         message: `Searched for "${query}"`,
         currentQuery: query
       });
+    }
+
+    // ACTION: FILLGAP — generate more LLM data to reach target count
+    if (action === 'fillgap') {
+      const targetCount = parsedPrompt.targetCount || 15;
+      const fillgapRound = body.fillgapRound || 0;
+      const MAX_FILLGAP_ROUNDS = 5;
+      
+      const existingPoints = await prisma.dataPoint.findMany({ where: { datasetId: dataset.id } });
+      const currentCount = existingPoints.length;
+      
+      if (currentCount >= targetCount || fillgapRound >= MAX_FILLGAP_ROUNDS) {
+        await logAction(`Data collection complete: ${currentCount} rows gathered.`);
+        return NextResponse.json({ nextAction: 'finalize', message: `Collected ${currentCount} rows. Finalizing...` });
+      }
+      
+      const existingData = existingPoints.map(p => typeof p.data === 'string' ? JSON.parse(p.data) : p.data);
+      await logAction(`Generating additional data (round ${fillgapRound + 1}): have ${currentCount}/${targetCount} rows...`);
+      
+      const llmData = await generateDataFromLLMKnowledge(parsedPrompt, columns, existingData);
+      
+      for (const record of llmData) {
+        await prisma.dataPoint.create({
+          data: { datasetId: dataset.id, data: record as any, confidence: 0.6, sourceId: null, evidenceSnippet: 'Generated from AI knowledge base (gap fill)' }
+        });
+      }
+      
+      const newCount = currentCount + llmData.length;
+      await logAction(`Generated ${llmData.length} additional records. Total: ${newCount}/${targetCount}`);
+      
+      if (newCount < targetCount) {
+        return NextResponse.json({ nextAction: 'fillgap', fillgapRound: fillgapRound + 1, message: `Filling data gap: ${newCount}/${targetCount} rows` });
+      }
+      
+      return NextResponse.json({ nextAction: 'finalize', message: `Target reached: ${newCount} rows. Finalizing...` });
     }
 
     // ACTION: FINALIZE

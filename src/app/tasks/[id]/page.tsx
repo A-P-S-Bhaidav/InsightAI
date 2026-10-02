@@ -36,6 +36,7 @@ export default function TaskDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [liveLog, setLiveLog] = useState<string[]>([]);
   const [estimatedTime, setEstimatedTime] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'pipeline' | 'datasets' | 'logs'>('overview');
 
   const fetchTask = async () => {
     try {
@@ -107,7 +108,7 @@ export default function TaskDetailPage() {
 
         if (data.nextAction) {
           currentAction = data.nextAction;
-          currentPayload = { queryIndex: data.queryIndex, baselineIndex: data.baselineIndex, resultIndex: data.resultIndex };
+          currentPayload = { queryIndex: data.queryIndex, baselineIndex: data.baselineIndex, resultIndex: data.resultIndex, fillgapRound: data.fillgapRound };
           
           if (data.nextAction === 'search') {
             setEstimatedTime(prev => (prev || 0) + 15); // Add time for each search
@@ -244,6 +245,31 @@ export default function TaskDetailPage() {
         </div>
       )}
 
+      {/* Tab Navigation Bar */}
+      <div style={{
+        display: 'flex', gap: 0, borderBottom: '1px solid var(--border-color)',
+        background: 'var(--bg-surface)', borderRadius: '10px 10px 0 0',
+        overflow: 'hidden',
+      }}>
+        {(['overview', 'pipeline', 'datasets', 'logs'] as const).map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              flex: 1, padding: '12px 16px', fontSize: 13, fontWeight: activeTab === tab ? 600 : 400,
+              color: activeTab === tab ? 'var(--color-primary)' : 'var(--text-muted)',
+              background: activeTab === tab ? 'var(--bg-surface-elevated)' : 'transparent',
+              border: 'none', borderBottom: activeTab === tab ? '2px solid var(--color-primary)' : '2px solid transparent',
+              cursor: 'pointer', textTransform: 'capitalize', transition: 'all 150ms ease',
+            }}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab: Overview */}
+      {activeTab === 'overview' && (<>
       {/* Live Feed */}
       {(executing || liveLog.length > 0) && (
         <div style={cardStyle}>
@@ -277,9 +303,32 @@ export default function TaskDetailPage() {
           </div>
         </div>
       )}
+      </>)}
 
-      {/* Workflow Pipeline */}
-      {allSteps.length > 0 && (
+      {/* Tab: Logs */}
+      {activeTab === 'logs' && liveLog.length > 0 && (
+        <div style={cardStyle}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Zap size={16} color="var(--color-primary)" /> Execution Logs
+          </h3>
+          <div style={{ background: '#0a0a0a', borderRadius: 8, padding: 16, fontFamily: 'monospace', fontSize: 12, color: '#e5e5e5', maxHeight: 500, overflowY: 'auto', border: '1px solid #333' }}>
+            {liveLog.map((log, i) => {
+              const isTime = log.startsWith('[');
+              const timeStr = isTime ? log.split(']')[0] + ']' : `[${new Date().toLocaleTimeString()}]`;
+              const msg = isTime ? log.slice(log.indexOf(']') + 1).trim() : log;
+              return (
+                <div key={i} style={{ marginBottom: 4, display: 'flex', gap: 8, lineHeight: 1.5 }}>
+                  <span style={{ color: '#0ea5e9', flexShrink: 0 }}>{timeStr}</span>
+                  <span>{msg}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Pipeline */}
+      {activeTab === 'pipeline' && allSteps.length > 0 && (
         <div style={cardStyle}>
           <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 20px 0' }}>Execution Pipeline</h3>
 
@@ -390,8 +439,8 @@ export default function TaskDetailPage() {
         </div>
       )}
 
-      {/* Datasets */}
-      {allDatasets.length > 0 && (
+      {/* Tab: Datasets */}
+      {activeTab === 'datasets' && allDatasets.length > 0 && (
         <div style={cardStyle}>
           <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Database size={16} color="var(--color-primary)" /> Generated Datasets
@@ -419,6 +468,23 @@ export default function TaskDetailPage() {
               </Link>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Empty states for tabs */}
+      {activeTab === 'logs' && liveLog.length === 0 && (
+        <div style={{ ...cardStyle, textAlign: 'center', padding: 40, color: 'var(--text-muted)', fontSize: 13 }}>
+          No execution logs yet. Execute the task to see live feed.
+        </div>
+      )}
+      {activeTab === 'pipeline' && allSteps.length === 0 && (
+        <div style={{ ...cardStyle, textAlign: 'center', padding: 40, color: 'var(--text-muted)', fontSize: 13 }}>
+          No pipeline steps yet. Execute the task to see the pipeline.
+        </div>
+      )}
+      {activeTab === 'datasets' && allDatasets.length === 0 && (
+        <div style={{ ...cardStyle, textAlign: 'center', padding: 40, color: 'var(--text-muted)', fontSize: 13 }}>
+          No datasets generated yet. Execute the task to generate data.
         </div>
       )}
 
