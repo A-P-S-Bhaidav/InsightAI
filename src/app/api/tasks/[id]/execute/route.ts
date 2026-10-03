@@ -215,8 +215,10 @@ export async function POST(
       
       // Early exit if target count is reached
       if (parsedPrompt.targetCount) {
-        const currentCount = await prisma.dataPoint.count({ where: { datasetId: dataset.id } });
-        if (currentCount >= parsedPrompt.targetCount) {
+        const existingPoints = await prisma.dataPoint.findMany({ where: { datasetId: dataset.id } });
+        const rawData = existingPoints.map(p => typeof p.data === 'string' ? JSON.parse(p.data) : (p.data || {}));
+        const pipelineResult = processPipeline(rawData);
+        if (pipelineResult.data.length >= parsedPrompt.targetCount) {
           await updateStep('scrape', 'completed');
           return NextResponse.json({ nextAction: 'finalize', message: `Target count of ${parsedPrompt.targetCount} reached. Finalizing...` });
         }
@@ -225,10 +227,13 @@ export async function POST(
       if (!plan || !plan.searchQueries || queryIndex >= plan.searchQueries.length) {
         await updateStep('scrape', 'completed');
         // Check if we still need more data before finalizing
-        const currentCount = await prisma.dataPoint.count({ where: { datasetId: dataset.id } });
+        const existingPoints = await prisma.dataPoint.findMany({ where: { datasetId: dataset.id } });
+        const rawData = existingPoints.map(p => typeof p.data === 'string' ? JSON.parse(p.data) : (p.data || {}));
+        const pipelineResult = processPipeline(rawData);
+        const cleanCount = pipelineResult.data.length;
         const targetCount = parsedPrompt.targetCount || 15;
-        if (currentCount < targetCount) {
-          return NextResponse.json({ nextAction: 'fillgap', message: `Searches complete (${currentCount}/${targetCount} rows). Generating additional data...` });
+        if (cleanCount < targetCount) {
+          return NextResponse.json({ nextAction: 'fillgap', message: `Searches complete (${cleanCount}/${targetCount} valid rows). Generating additional data...` });
         }
         return NextResponse.json({ nextAction: 'finalize', message: 'Completed all searches' });
       }
@@ -349,15 +354,17 @@ export async function POST(
       const MAX_FILLGAP_ROUNDS = 5;
       
       const existingPoints = await prisma.dataPoint.findMany({ where: { datasetId: dataset.id } });
-      const currentCount = existingPoints.length;
+      const rawData = existingPoints.map(p => typeof p.data === 'string' ? JSON.parse(p.data) : (p.data || {}));
+      const pipelineResult = processPipeline(rawData);
+      const cleanCount = pipelineResult.data.length;
       
-      if (currentCount >= targetCount || fillgapRound >= MAX_FILLGAP_ROUNDS) {
-        await logAction(`Data collection complete: ${currentCount} rows gathered.`);
-        return NextResponse.json({ nextAction: 'finalize', message: `Collected ${currentCount} rows. Finalizing...` });
+      if (cleanCount >= targetCount || fillgapRound >= MAX_FILLGAP_ROUNDS) {
+        await logAction(`Data collection complete: ${cleanCount} valid rows gathered.`);
+        return NextResponse.json({ nextAction: 'finalize', message: `Collected ${cleanCount} valid rows. Finalizing...` });
       }
       
-      const existingData = existingPoints.map(p => typeof p.data === 'string' ? JSON.parse(p.data) : p.data);
-      await logAction(`Generating additional data (round ${fillgapRound + 1}): have ${currentCount}/${targetCount} rows...`);
+      const existingData = rawData;
+      await logAction(`Generating additional data (round ${fillgapRound + 1}): have ${cleanCount}/${targetCount} valid rows...`);
       
       const llmData = await generateDataFromLLMKnowledge(parsedPrompt, columns, existingData);
       
@@ -367,8 +374,8 @@ export async function POST(
         });
       }
       
-      const newCount = currentCount + llmData.length;
-      await logAction(`Generated ${llmData.length} additional records. Total: ${newCount}/${targetCount}`);
+      const newCount = cleanCount + llmData.length;
+      await logAction(`Generated ${llmData.length} additional records.`);
       
       if (newCount < targetCount) {
         return NextResponse.json({ nextAction: 'fillgap', fillgapRound: fillgapRound + 1, message: `Filling data gap: ${newCount}/${targetCount} rows` });
