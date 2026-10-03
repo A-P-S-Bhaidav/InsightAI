@@ -224,7 +224,10 @@ export async function POST(
         }
       }
       
-      if (!plan || !plan.searchQueries || queryIndex >= plan.searchQueries.length) {
+      const isHighVolume = (parsedPrompt.targetCount && parsedPrompt.targetCount > 50) || task.priority === 'high';
+      const maxQueries = isHighVolume ? 15 : 8;
+
+      if (!plan || !plan.searchQueries || queryIndex >= Math.min(plan.searchQueries.length, maxQueries)) {
         await updateStep('scrape', 'completed');
         // Check if we still need more data before finalizing
         const existingPoints = await prisma.dataPoint.findMany({ where: { datasetId: dataset.id } });
@@ -243,7 +246,6 @@ export async function POST(
       const results = await webSearch(cleanQuery || query, 8); // fetch more results
       
       // Determine scraping depth based on volume requested
-      const isHighVolume = (parsedPrompt.targetCount && parsedPrompt.targetCount > 50) || task.priority === 'high';
       const isVeryHighVolume = parsedPrompt.targetCount && parsedPrompt.targetCount >= 200;
       const scrapeDepth = isHighVolume ? 8 : 5; // Scrape up to 8 pages per query
 

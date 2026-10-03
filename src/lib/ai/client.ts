@@ -76,7 +76,8 @@ async function callProvider(provider: AIProvider, systemPrompt: string, userProm
       const res = await fetch('https://api.cohere.com/v1/chat', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json', 'accept': 'application/json' },
-        body: JSON.stringify({ message: userPrompt, preamble: systemPrompt, model: 'command-r' })
+        body: JSON.stringify({ message: userPrompt, preamble: systemPrompt, model: 'command-r' }),
+        signal: AbortSignal.timeout(40000),
       });
       const data = await res.json();
       if (data.text) {
@@ -95,7 +96,8 @@ async function callProvider(provider: AIProvider, systemPrompt: string, userProm
         body: JSON.stringify({
           model: 'meta-llama/llama-3-8b-instruct:free',
           messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
-        })
+        }),
+        signal: AbortSignal.timeout(40000),
       });
       const data = await res.json();
       if (data.choices?.[0]?.message?.content) {
@@ -114,7 +116,8 @@ async function callProvider(provider: AIProvider, systemPrompt: string, userProm
         body: JSON.stringify({
           model: 'meta-llama/Llama-3-70b-chat-hf',
           messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
-        })
+        }),
+        signal: AbortSignal.timeout(40000),
       });
       const data = await res.json();
       if (data.choices?.[0]?.message?.content) {
@@ -133,7 +136,8 @@ async function callProvider(provider: AIProvider, systemPrompt: string, userProm
         body: JSON.stringify({
           inputs: `<|system|>\n${systemPrompt}\n<|user|>\n${userPrompt}\n<|assistant|>\n`,
           parameters: { max_new_tokens: 4096, temperature: 0.3 }
-        })
+        }),
+        signal: AbortSignal.timeout(40000),
       });
       const data = await res.json();
       if (data?.[0]?.generated_text) {
@@ -153,7 +157,8 @@ async function callProvider(provider: AIProvider, systemPrompt: string, userProm
         body: JSON.stringify({
           model: 'Meta-Llama-3.1-8B-Instruct',
           messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
-        })
+        }),
+        signal: AbortSignal.timeout(40000),
       });
       const data = await res.json();
       if (data.choices?.[0]?.message?.content) {
@@ -190,7 +195,13 @@ export async function generateAIContent(
   for (const provider of providerChain) {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
-        return await callProvider(provider, systemPrompt, userPrompt);
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error(`Timeout: Provider ${provider} took longer than 45 seconds`)), 45000);
+        });
+        return await Promise.race([
+          callProvider(provider, systemPrompt, userPrompt),
+          timeoutPromise
+        ]);
       } catch (error: unknown) {
         const status = (error as { status?: number }).status;
         const errMessage = error instanceof Error ? error.message : String(error);
