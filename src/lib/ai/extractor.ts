@@ -16,7 +16,7 @@ export async function extractStructuredData(
       return [];
     }
 
-    const prompt = `You are a data extraction expert. Extract structured records from the following web page content.
+    const prompt = `You are a strict data extraction expert. Extract structured records from the following web page content.
 
 TASK: ${context}
 SOURCE URL: ${sourceUrl}
@@ -26,25 +26,25 @@ WEB PAGE CONTENT:
 ${pageText.slice(0, 10000)}
 
 INSTRUCTIONS:
-1. Find ALL records/entries that match the task requirements
-2. Extract data for EACH required column
+1. Find ALL records/entries that match the task requirements.
+2. Extract REAL data for EACH required column based ONLY on the provided web page content.
 3. If a value is missing, use "" (empty string). DO NOT drop the row if some columns are missing.
 4. Return a JSON array of objects.
 5. Each object MUST have keys matching the REQUIRED COLUMNS exactly (case-sensitive).
 6. Return ONLY valid JSON — no markdown, no explanation, no backticks.
-7. Extract REAL data from the page. Do NOT fabricate values, but do include partial records if you find them.
-8. AGGRESSIVE EXTRACTION: We need volume. Extract every possible matching entity you can find on the page.
+7. CRITICAL: Do NOT fabricate, hallucinate, or invent values. Do NOT use placeholder texts like "value1" or "example".
+8. If the page does NOT contain any data relevant to the TASK, return an empty array: []
 
-Example response format:
+Example response format (DO NOT COPY THESE EXACT VALUES):
 [
   {
-    "${columns[0]}": "value1", 
-    "${columns.length > 1 ? columns[1] : 'col2'}": "value2"
+    "${columns[0]}": "Example Data 1", 
+    "${columns.length > 1 ? columns[1] : 'col2'}": "Example Data 2"
   }
 ]`;
 
     const response = await generateAIContent(
-      'You are a high-volume data extractor. Return ONLY a valid JSON array. No markdown. Extract every matching record you can find, even if partial.',
+      'You are a strict high-volume data extractor. Return ONLY a valid JSON array. Extract every matching record you can find, but NEVER invent data. If no real data exists, return [].',
       prompt,
       'extraction'
     );
@@ -87,6 +87,13 @@ Example response format:
       record['_source'] = sourceUrl;
       return record;
     }).filter(row => {
+      // Reject any rows containing placeholder hallucination patterns
+      const hasHallucination = columns.some(col => {
+        const val = (row[col] || '').toLowerCase();
+        return val.match(/^value\d+$/) || val.includes('example data') || val.includes('placeholder');
+      });
+      if (hasHallucination) return false;
+
       // Keep rows where at least ONE user column has data
       return columns.some(col => row[col] && row[col].length > 0);
     });

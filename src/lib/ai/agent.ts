@@ -108,7 +108,17 @@ Your response must start with [ and end with ]`;
       }
       record['_source'] = 'AI Knowledge Base';
       return record;
-    }).filter(row => columns.some(col => row[col] && row[col].length > 0));
+    }).filter(row => {
+      // Reject any rows containing placeholder hallucination patterns
+      const hasHallucination = columns.some(col => {
+        const val = (row[col] || '').toLowerCase();
+        return val.match(/^value\d+$/) || val.includes('example data') || val.includes('placeholder');
+      });
+      if (hasHallucination) return false;
+
+      // Keep rows where at least ONE user column has data
+      return columns.some(col => row[col] && row[col].length > 0);
+    });
   } catch (parseError) {
     console.error('[Agent] Failed to parse LLM JSON:', parseError);
     console.error('[Agent] Raw cleaned:', cleaned.slice(0, 500));
