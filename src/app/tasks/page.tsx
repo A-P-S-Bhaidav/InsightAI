@@ -57,20 +57,28 @@ export default function TasksPage() {
         </Link>
       </div>
 
-      {/* Filter tabs — full width, evenly distributed */}
+      {/* Filter tabs — horizontally scrollable on mobile */}
       <div style={{
-        display: 'grid', gridTemplateColumns: `repeat(${FILTERS.length}, 1fr)`, gap: 0,
-        background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 10, overflow: 'hidden',
+        display: 'flex', gap: 0,
+        background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 10, 
+        overflowX: 'auto', WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'none', // Hide scrollbar Firefox
       }}>
-        {FILTERS.map(f => (
+        <style>{`
+          .filter-tabs::-webkit-scrollbar { display: none; }
+        `}</style>
+        {FILTERS.map((f, i) => (
           <button
             key={f}
+            className="filter-tabs"
             onClick={() => setFilter(f)}
             style={{
-              padding: '10px 0', fontSize: 13, fontWeight: filter === f ? 600 : 400, cursor: 'pointer',
+              flex: '1 0 auto',
+              minWidth: 'fit-content',
+              padding: '10px 16px', fontSize: 13, fontWeight: filter === f ? 600 : 400, cursor: 'pointer',
               background: filter === f ? 'var(--color-primary)' : 'transparent',
               color: filter === f ? '#fff' : 'var(--text-secondary)',
-              border: 'none', borderRight: '1px solid var(--border-color)',
+              border: 'none', borderRight: i < FILTERS.length - 1 ? '1px solid var(--border-color)' : 'none',
               transition: 'all 150ms',
             }}
           >
