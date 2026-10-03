@@ -58,28 +58,24 @@ export default function TasksPage() {
       </div>
 
       {/* Filter tabs — horizontally scrollable on mobile */}
-      <div style={{
-        display: 'flex', gap: 0,
+      <div className="hide-scrollbar" style={{
+        display: 'flex', flexWrap: 'nowrap', overflowX: 'auto',
         background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 10, 
-        overflowX: 'auto', WebkitOverflowScrolling: 'touch',
-        scrollbarWidth: 'none', // Hide scrollbar Firefox
+        WebkitOverflowScrolling: 'touch',
       }}>
-        <style>{`
-          .filter-tabs::-webkit-scrollbar { display: none; }
-        `}</style>
         {FILTERS.map((f, i) => (
           <button
             key={f}
-            className="filter-tabs"
             onClick={() => setFilter(f)}
             style={{
-              flex: '1 0 auto',
+              flex: 1,
               minWidth: 'fit-content',
-              padding: '10px 16px', fontSize: 13, fontWeight: filter === f ? 600 : 400, cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              padding: '12px 16px', fontSize: 13, fontWeight: filter === f ? 600 : 400, cursor: 'pointer',
               background: filter === f ? 'var(--color-primary)' : 'transparent',
               color: filter === f ? '#fff' : 'var(--text-secondary)',
               border: 'none', borderRight: i < FILTERS.length - 1 ? '1px solid var(--border-color)' : 'none',
-              transition: 'all 150ms',
+              transition: 'background 150ms, color 150ms',
             }}
           >
             {f}
